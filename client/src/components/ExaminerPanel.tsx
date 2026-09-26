@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { examError } from '../lib/examErrors';
 import { useMatch } from '../state/MatchContext';
 import { CueCardView } from './CueCardView';
@@ -6,11 +6,12 @@ import { ScoreDialog } from './ScoreDialog';
 
 /** Examiner side: progress controls, active cue card, and the question bank. */
 export function ExaminerPanel() {
-  const { state, startPart, hideNow } = useMatch();
+  const { state, startPart, hideNow, askFollowup } = useMatch();
   const session = state.session;
   const [picking, setPicking] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [followup, setFollowup] = useState('');
 
   const part = session?.part ?? 0;
   const stage = session?.stage ?? null;
@@ -34,6 +35,16 @@ export function ExaminerPanel() {
     } finally {
       setBusy(false);
     }
+  };
+
+  const onFollowupSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    const text = followup.trim();
+    if (text.length < 2) return;
+    run(async () => {
+      await askFollowup(text);
+      setFollowup('');
+    });
   };
 
   const steps = [1, 2, 3] as const;
@@ -136,6 +147,33 @@ export function ExaminerPanel() {
             <p className="success-text">
               ✅ Band submitted — {session.roundNumber === 1 ? 'swapping roles…' : 'finishing up…'}
             </p>
+          </div>
+        )}
+
+        {part >= 1 && !scoredThisRound && (
+          <form className="followup-form" onSubmit={onFollowupSubmit}>
+            <label className="muted small" htmlFor="followup-input">
+              Ask an extra relevant question — it pops up on the examinee&apos;s screen.
+            </label>
+            <div className="row">
+              <input
+                id="followup-input"
+                value={followup}
+                onChange={(e) => setFollowup(e.target.value)}
+                placeholder="e.g. Do you still keep in touch with them?"
+                maxLength={200}
+              />
+              <button type="submit" disabled={busy || followup.trim().length < 2}>
+                Ask
+              </button>
+            </div>
+          </form>
+        )}
+
+        {session.followup && (
+          <div className="followup-q">
+            <span className="muted small">You asked:</span>
+            <p>{session.followup}</p>
           </div>
         )}
 

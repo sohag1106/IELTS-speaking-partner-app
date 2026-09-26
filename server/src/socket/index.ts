@@ -11,6 +11,7 @@ import {
   handleRoomJoin,
 } from './matchmaking.js';
 import {
+  handleFollowupAsk,
   handleHideNow,
   handleMatchReady,
   handlePartStart,
@@ -101,6 +102,15 @@ export function initSocket(io: Server): void {
         console.error('[socket] score:submit error:', err);
         ack?.({ ok: false, error: 'internal' });
       });
+    });
+
+    socket.on(C2S.FOLLOWUP_ASK, (payload: unknown, ack?: Ack) => {
+      try {
+        handleFollowupAsk(io, socket, payload, ack);
+      } catch (err) {
+        console.error('[socket] followup:ask error:', err);
+        ack?.({ ok: false, error: 'internal' });
+      }
     });
 
     socket.on(C2S.TIMER_PING, (payload: unknown) => {

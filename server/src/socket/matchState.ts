@@ -8,9 +8,11 @@ import {
   updateRoundProgress,
 } from '../db/repos/matchesRepo.js';
 import { insertScore } from '../db/repos/scoresRepo.js';
+import { sanitizeText } from '../util/text.js';
 import { getSetPayload, type QuestionSetPayload } from '../db/repos/questionsRepo.js';
 import {
   S2C,
+  type FollowupPayload,
   type PartChangedPayload,
   type PartStartPayload,
   type PeerReadyPayload,
@@ -304,6 +306,36 @@ export function handleHideNow(io: Server, socket: Socket, ack?: Ack): void {
   st.stage = 'ended';
   emitBoth(io, st, S2C.TIMER_END, { id, label: id });
   emitBoth(io, st, S2C.PART_CHANGED, partChanged(st));
+  ack?.({ ok: true });
+}
+
+/** Examiner sends a free-text follow-up question; both sides receive it. */
+export function handleFollowupAsk(io: Server, socket: Socket, raw: unknown, ack?: Ack): void {
+  const st = getExam(socket);
+  if (!st) {
+    fail(ack, 'not_in_match');
+    return;
+  }
+  if (socket.data.userId !== examinerIdOf(st)) {
+    fail(ack, 'not_examiner');
+    return;
+  }
+  if (st.completed) {
+    fail(ack, 'completed');
+    return;
+  }
+  if (st.part === 0) {
+    fail(ack, 'not_started');
+    return;
+  }
+  const rawText = (raw as { text?: unknown } | null)?.text;
+  const text = sanitizeText(typeof rawText === 'string' ? rawText : '', 200);
+  if (text.length < 2) {
+    fail(ack, 'bad_text');
+    return;
+  }
+  const payload: FollowupPayload = { text };
+  emitBoth(io, st, S2C.FOLLOWUP_NEW, payload);
   ack?.({ ok: true });
 }
 

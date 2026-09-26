@@ -167,8 +167,40 @@ async function main() {
     check('both sides Connected', chips.every((c) => c === 'Connected'), chips.join(' / '));
 
     console.log('media: frames decoding');
-    for (const [i, { page }] of [p1, p2].map((x, idx) => [idx, x])) {
-      const info = await page.evaluate(() => {
+    // The peer tile starts muted and unmutes only after play() resolves
+    // (muted-then-unmute), which can land a beat after the Connected chip
+    // flips — poll for it instead of sampling the page exactly once.
+    const mediaReady = async (pg) => {
+      try {
+        await pg.waitForFunction(
+          () => {
+            const vids = [...document.querySelectorAll('video')];
+            const selfOk = vids.some(
+              (v) =>
+                v.muted &&
+                v.srcObject &&
+                v.srcObject.getVideoTracks().some((t) => t.readyState === 'live'),
+            );
+            const peer = vids.find((v) => !v.muted);
+            return Boolean(
+              selfOk &&
+                peer &&
+                peer.videoWidth > 0 &&
+                peer.srcObject &&
+                peer.srcObject.getVideoTracks().some((t) => t.readyState === 'live') &&
+                peer.srcObject.getAudioTracks().some((t) => t.readyState === 'live'),
+            );
+          },
+          { timeout: 15000 },
+        );
+        return true;
+      } catch {
+        return false;
+      }
+    };
+    const mediaOk = await Promise.all(pages.map((pg) => mediaReady(pg)));
+    for (const [i, pg] of pages.entries()) {
+      const info = await pg.evaluate(() => {
         const videos = [...document.querySelectorAll('video')];
         return videos.map((v) => ({
           hasSrc: Boolean(v.srcObject),
@@ -188,10 +220,14 @@ async function main() {
       check(`p${i + 1}: self view attached (muted)`, Boolean(self && self.hasSrc && self.liveVideoTracks > 0), JSON.stringify(info));
       check(
         `p${i + 1}: peer video flowing with frames`,
-        Boolean(peer && peer.liveVideoTracks > 0 && peer.w > 0 && peer.h > 0),
+        mediaOk[i] && Boolean(peer && peer.liveVideoTracks > 0 && peer.w > 0 && peer.h > 0),
         JSON.stringify(info),
       );
-      check(`p${i + 1}: peer audio track live`, Boolean(peer && peer.liveAudioTracks > 0), JSON.stringify(info));
+      check(
+        `p${i + 1}: peer audio track live`,
+        mediaOk[i] && Boolean(peer && peer.liveAudioTracks > 0),
+        JSON.stringify(info),
+      );
     }
 
     console.log('badges: peer media state propagated');

@@ -12,6 +12,7 @@ export const C2S = {
   PART_START: 'part:start',
   PART2_HIDE_NOW: 'part2:hide_now',
   SCORE_SUBMIT: 'score:submit',
+  FOLLOWUP_ASK: 'followup:ask',
   MATCH_LEAVE: 'match:leave',
   WEBRTC_OFFER: 'webrtc:offer',
   WEBRTC_ANSWER: 'webrtc:answer',
@@ -31,6 +32,7 @@ export const S2C = {
   TIMER_PONG: 'timer:pong',
   ROUND_SCORED: 'round:scored',
   MATCH_COMPLETED: 'match:completed',
+  FOLLOWUP_NEW: 'followup:new',
   PEER_MEDIA: 'peer:media',
   WEBRTC_OFFER: 'webrtc:offer',
   WEBRTC_ANSWER: 'webrtc:answer',
@@ -112,6 +114,11 @@ export interface PartStartPayload {
 
 export interface ScoreSubmitPayload {
   band: number;
+}
+
+/** Examiner's free-text follow-up question, relayed to both sides. */
+export interface FollowupPayload {
+  text: string;
 }
 
 export interface TimerPingPayload {

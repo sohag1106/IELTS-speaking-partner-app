@@ -108,6 +108,20 @@ async function runRound(ioExaminer, ioExaminee, examinerName, band, expectSwap) 
   const notEx = await ack(ioExaminee, 'part:start', { part: 2, cardOrdinal: 1 });
   check(`${examinerName}: examinee cannot drive parts`, notEx.error === 'not_examiner', JSON.stringify(notEx));
 
+  // Examiner free-text follow-up: relayed to both sides, sanitized
+  const fuA = once(ioExaminer, 'followup:new');
+  const fuB = once(ioExaminee, 'followup:new');
+  const fu = await ack(ioExaminer, 'followup:ask', { text: `  ${examinerName} follow-up?  ` });
+  check(`${examinerName}: followup accepted`, fu.ok === true, JSON.stringify(fu));
+  const [f1, f2] = await Promise.all([fuA, fuB]);
+  check(
+    `${examinerName}: followup relayed to both (trimmed)`,
+    f1.text === `${examinerName} follow-up?` && f2.text === `${examinerName} follow-up?`,
+    JSON.stringify({ f1, f2 }),
+  );
+  const fuEx = await ack(ioExaminee, 'followup:ask', { text: 'let me ask instead' });
+  check(`${examinerName}: examinee cannot ask followup`, fuEx.error === 'not_examiner', JSON.stringify(fuEx));
+
   // Part 2 → prep timer
   const timerStart = once(ioExaminer, 'timer:start');
   const ea2 = once(ioExaminer, 'part:changed');
@@ -214,6 +228,13 @@ async function main() {
       reJ.some((e) => e.userId === ivy.userId) &&
       reJ.some((e) => e.userId === jack.userId),
     JSON.stringify({ reI, reJ }),
+  );
+
+  const earlyFu = await ack(si, 'followup:ask', { text: 'hello there' });
+  check(
+    'followup blocked before Part 1 starts',
+    earlyFu.error === 'not_started',
+    JSON.stringify(earlyFu),
   );
 
   const swap = await runRound(si, sj, 'ivy', 6.5, true);

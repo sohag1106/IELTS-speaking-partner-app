@@ -11,6 +11,9 @@ const messages: Record<string, string> = {
   round_finished: 'This round is already finished.',
   not_in_match: 'You are not in a match.',
   not_active: 'No cue card is showing right now.',
+  not_started: 'Start Part 1 before asking follow-up questions.',
+  bad_text: 'Type a question first.',
+  completed: 'This match is already finished.',
   rate_limited: 'Too many attempts — wait a moment and try again.',
   internal: 'Something went wrong — please try again.',
 };

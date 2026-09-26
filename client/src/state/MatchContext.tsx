@@ -13,6 +13,7 @@ import { notePong } from '../lib/clock';
 import {
   C2S,
   S2C,
+  type FollowupPayload,
   type MatchCompletedPayload,
   type MatchFoundPayload,
   type PartChangedPayload,
@@ -53,6 +54,8 @@ export interface MatchSession {
   peerCam: boolean;
   peerDisconnected: boolean;
   peerLeft: boolean;
+  /** Latest examiner follow-up question (cleared each round). */
+  followup: string | null;
 }
 
 interface MatchState {
@@ -74,9 +77,11 @@ type Action =
   | { type: 'timer_end'; payload: TimerEndPayload }
   | { type: 'round_scored'; payload: RoundScoredPayload }
   | { type: 'match_completed'; payload: MatchCompletedPayload }
+  | { type: 'followup'; payload: FollowupPayload }
   | { type: 'peer_disconnected' }
   | { type: 'match_left' }
   | { type: 'error'; message: string }
+  | { type: 'to_lobby' }
   | { type: 'reset' };
 
 const initialState: MatchState = {
@@ -110,6 +115,7 @@ function sessionFrom(p: MatchFoundPayload): MatchSession {
     peerCam: false,
     peerDisconnected: false,
     peerLeft: false,
+    followup: null,
   };
 }
 
@@ -140,6 +146,7 @@ function reducer(state: MatchState, action: Action): MatchState {
           timer: null,
           youReady: false,
           peerReady: false,
+          followup: null,
         },
       };
     }
@@ -210,6 +217,10 @@ function reducer(state: MatchState, action: Action): MatchState {
       }));
       return { ...state, session: { ...state.session, completed: true, scores } };
     }
+    case 'followup': {
+      if (!state.session) return state;
+      return { ...state, session: { ...state.session, followup: action.payload.text } };
+    }
     case 'peer_disconnected': {
       if (!state.session) return state;
       return { ...state, session: { ...state.session, peerDisconnected: true } };
@@ -220,6 +231,10 @@ function reducer(state: MatchState, action: Action): MatchState {
     }
     case 'error':
       return { ...state, error: action.message, queueWaiting: false };
+    case 'to_lobby':
+      // Back to the lobby after a match: clear session/queue but keep the
+      // live socket's `connected` flag as-is (see leaveMatch).
+      return { ...initialState, connected: state.connected };
     case 'reset':
       return initialState;
     default:
@@ -239,6 +254,7 @@ interface MatchCtx {
   startPart: (part: 1 | 2 | 3, cardOrdinal?: number) => Promise<void>;
   hideNow: () => Promise<void>;
   submitScore: (band: number) => Promise<void>;
+  askFollowup: (text: string) => Promise<void>;
 }
 
 const Ctx = createContext<MatchCtx | null>(null);
@@ -273,6 +289,7 @@ export function MatchProvider({ children }: { children: ReactNode }) {
     const onTimerEnd = (p: TimerEndPayload) => dispatch({ type: 'timer_end', payload: p });
     const onScored = (p: RoundScoredPayload) => dispatch({ type: 'round_scored', payload: p });
     const onCompleted = (p: MatchCompletedPayload) => dispatch({ type: 'match_completed', payload: p });
+    const onFollowup = (p: FollowupPayload) => dispatch({ type: 'followup', payload: p });
     const onPeerDown = () => dispatch({ type: 'peer_disconnected' });
     const onPeerLeft = () => dispatch({ type: 'match_left' });
     const onPeerReady = (p: PeerReadyPayload) =>
@@ -302,6 +319,7 @@ export function MatchProvider({ children }: { children: ReactNode }) {
     sock.on(S2C.TIMER_PONG, onPong);
     sock.on(S2C.ROUND_SCORED, onScored);
     sock.on(S2C.MATCH_COMPLETED, onCompleted);
+    sock.on(S2C.FOLLOWUP_NEW, onFollowup);
     sock.on(S2C.PEER_DISCONNECTED, onPeerDown);
     sock.on(S2C.MATCH_LEFT, onPeerLeft);
     sock.on(S2C.ERROR, onError);
@@ -322,6 +340,7 @@ export function MatchProvider({ children }: { children: ReactNode }) {
       sock.off(S2C.TIMER_PONG, onPong);
       sock.off(S2C.ROUND_SCORED, onScored);
       sock.off(S2C.MATCH_COMPLETED, onCompleted);
+      sock.off(S2C.FOLLOWUP_NEW, onFollowup);
       sock.off(S2C.PEER_DISCONNECTED, onPeerDown);
       sock.off(S2C.MATCH_LEFT, onPeerLeft);
       sock.off(S2C.ERROR, onError);
@@ -367,7 +386,10 @@ export function MatchProvider({ children }: { children: ReactNode }) {
   const leaveMatch = useCallback(() => {
     const sock = socketRef.current;
     if (sock && socketRef.current) sock.emit(C2S.MATCH_LEAVE);
-    dispatch({ type: 'reset' });
+    // Clear the match but NOT the socket flag: the socket stays connected, so
+    // resetting `connected` would leave the lobby stuck on "Connecting to
+    // server..." until a full page refresh.
+    dispatch({ type: 'to_lobby' });
   }, []);
 
   const markReady = useCallback(async () => {
@@ -398,6 +420,13 @@ export function MatchProvider({ children }: { children: ReactNode }) {
     if (!res.ok) throw new Error(res.error ?? 'failed');
   }, []);
 
+  const askFollowup = useCallback(async (text: string) => {
+    const sock = socketRef.current;
+    if (!sock) throw new Error('not connected');
+    const res = await emitAck(sock, C2S.FOLLOWUP_ASK, { text });
+    if (!res.ok) throw new Error(res.error ?? 'failed');
+  }, []);
+
   const value = useMemo(
     () => ({
       state,
@@ -411,8 +440,9 @@ export function MatchProvider({ children }: { children: ReactNode }) {
       startPart,
       hideNow,
       submitScore,
+      askFollowup,
     }),
-    [state, joinQueue, leaveQueue, createRoom, joinRoom, leaveMatch, markReady, startPart, hideNow, submitScore],
+    [state, joinQueue, leaveQueue, createRoom, joinRoom, leaveMatch, markReady, startPart, hideNow, submitScore, askFollowup],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
