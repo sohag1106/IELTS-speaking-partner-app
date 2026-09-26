@@ -16,7 +16,7 @@ export function ExamineePanel() {
   if (scoredThisRound) {
     body = (
       <div className="status-block">
-        <p className="success-text">✅ Your examiner submitted the score for this round.</p>
+        <p className="success-text">Your examiner submitted the score for this round.</p>
         <p className="muted">
           {session.roundNumber === 1 ? 'Swapping roles for round 2…' : 'Finishing the match…'}
         </p>
@@ -34,8 +34,8 @@ export function ExamineePanel() {
       <div className="status-block">
         <span className="part-chip">Part 1 · Interview</span>
         <p>
-          The examiner asks short questions about familiar topics. Give natural answers —
-          a sentence or two each is fine.
+          The examiner asks short questions about familiar topics. Give natural answers — a
+          sentence or two each is fine.
         </p>
         <Scratchpad matchId={session.matchId} />
       </div>
@@ -44,10 +44,8 @@ export function ExamineePanel() {
     body = (
       <div className="status-block">
         <span className="part-chip">Part 2 · Long turn</span>
-        <div className="notice">⏱ Time&apos;s up — the cue card is now hidden.</div>
-        <p className="muted">
-          Keep talking on the same topic until the examiner moves on.
-        </p>
+        <div className="notice">Time&apos;s up — the cue card is now hidden.</div>
+        <p className="muted">Keep talking on the same topic until the examiner moves on.</p>
         <Scratchpad matchId={session.matchId} />
       </div>
     );
@@ -67,8 +65,8 @@ export function ExamineePanel() {
       <div className="status-block">
         <span className="part-chip">Part 3 · Discussion</span>
         <p>
-          The examiner asks wider, more abstract questions on the topic. Give fuller
-          answers with reasons and examples.
+          The examiner asks wider, more abstract questions on the topic. Give fuller answers
+          with reasons and examples.
         </p>
         <p className="muted">When you&apos;re done, the examiner will submit your band.</p>
         <Scratchpad matchId={session.matchId} />

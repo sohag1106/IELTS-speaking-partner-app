@@ -22,12 +22,15 @@ export function NicknameGate() {
 
   return (
     <div className="center-page">
-      <form className="card" style={{ width: 'min(420px, 100%)' }} onSubmit={onSubmit}>
+      <form className="card auth-card" onSubmit={onSubmit}>
+        <div className="auth-badge" aria-hidden="true">
+          🎤
+        </div>
         <h1>Welcome</h1>
         <p className="muted">
           Pick a display name to start practicing IELTS Speaking. No password needed.
         </p>
-        <div className="row" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
+        <div className="stack">
           <input
             value={nickname}
             onChange={(e) => setNickname(e.target.value)}
@@ -39,7 +42,7 @@ export function NicknameGate() {
           />
           {error && <div className="error-text">{error}</div>}
           <button type="submit" disabled={busy || nickname.trim().length < 2}>
-            {busy ? 'Starting…' : 'Start practicing'}
+            {busy ? 'Starting...' : 'Start practicing'}
           </button>
         </div>
       </form>

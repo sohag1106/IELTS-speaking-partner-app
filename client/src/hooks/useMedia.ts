@@ -9,16 +9,16 @@ export interface UseMediaResult {
   starting: boolean;
   /** Friendly error message when permission is denied / no device exists. */
   error: string | null;
-  /** Gesture-gated start: call from a button click. Resolves to success. */
+  /** Acquire camera+mic. Idempotent — concurrent calls share one request. */
   start: () => Promise<boolean>;
   toggleMic: () => void;
   toggleCam: () => void;
 }
 
 /**
- * Local media capture. Starts only on an explicit gesture (`start()`), so it
- * satisfies mobile autoplay/permission policies — ReadyGate's "Enable camera"
- * button is the gesture.
+ * Local media capture. MatchPage calls `start()` automatically the moment a
+ * match is found — Chrome/Edge prompt for permission without needing a tap —
+ * while ReadyGate and MediaControls keep manual buttons as the fallback.
  */
 export function useMedia(): UseMediaResult {
   const [stream, setStream] = useState<MediaStream | null>(null);
@@ -27,36 +27,46 @@ export function useMedia(): UseMediaResult {
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  /** In-flight getUserMedia, so StrictMode's double effect can't open two cameras. */
+  const inFlightRef = useRef<Promise<boolean> | null>(null);
 
-  const start = useCallback(async (): Promise<boolean> => {
-    if (streamRef.current) return true;
-    setStarting(true);
-    setError(null);
-    try {
-      const s = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
-        audio: { echoCancellation: true, noiseSuppression: true },
-      });
-      streamRef.current = s;
-      setStream(s);
-      setMic(true);
-      setCam(true);
-      return true;
-    } catch (e) {
-      const name = e instanceof DOMException ? e.name : '';
-      if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
-        setError('Camera/microphone permission was denied. Allow access in your browser and try again.');
-      } else if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
-        setError('No camera or microphone found on this device.');
-      } else if (name === 'NotReadableError' || name === 'TrackStartError') {
-        setError('Your camera or mic is already in use by another app.');
-      } else {
-        setError(e instanceof Error ? e.message : 'Could not start camera/microphone.');
+  const start = useCallback((): Promise<boolean> => {
+    if (streamRef.current) return Promise.resolve(true);
+    if (inFlightRef.current) return inFlightRef.current;
+
+    const run = (async () => {
+      setStarting(true);
+      setError(null);
+      try {
+        const s = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: { echoCancellation: true, noiseSuppression: true },
+        });
+        streamRef.current = s;
+        setStream(s);
+        setMic(true);
+        setCam(true);
+        return true;
+      } catch (e) {
+        const name = e instanceof DOMException ? e.name : '';
+        if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
+          setError('Camera/microphone permission was denied. Allow access in your browser and try again.');
+        } else if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
+          setError('No camera or microphone found on this device.');
+        } else if (name === 'NotReadableError' || name === 'TrackStartError') {
+          setError('Your camera or mic is already in use by another app.');
+        } else {
+          setError(e instanceof Error ? e.message : 'Could not start camera/microphone.');
+        }
+        return false;
+      } finally {
+        setStarting(false);
+        inFlightRef.current = null;
       }
-      return false;
-    } finally {
-      setStarting(false);
-    }
+    })();
+
+    inFlightRef.current = run;
+    return run;
   }, []);
 
   const toggleMic = useCallback(() => {

@@ -28,8 +28,18 @@ export function MatchPage() {
 
   useWakeLock(live);
 
-  // Tell the peer about our mic/cam state whenever it changes.
+  // Auto-open the camera/mic the moment a match is found: the browser's
+  // permission prompt appears on its own (no extra tap needed) and ReadyGate
+  // then confirms readiness automatically. Denial falls back to the
+  // ReadyGate buttons / the mid-match "Enable camera & mic" control.
   const matchId = session?.matchId;
+  const { start: startMedia } = media;
+  useEffect(() => {
+    if (!matchId) return;
+    void startMedia();
+  }, [matchId, startMedia]);
+
+  // Tell the peer about our mic/cam state whenever it changes.
   const { mic, cam } = media;
   useEffect(() => {
     if (!socket || !matchId) return;
@@ -65,12 +75,12 @@ export function MatchPage() {
   return (
     <div className="page match-page">
       <div className="card match-header">
-        <div className="row" style={{ justifyContent: 'space-between' }}>
-          <div>
+        <div className="row">
+          <div className="match-meta">
             <span className={`role-tag ${session.role}`}>{session.role}</span>
-            <span className="muted" style={{ marginLeft: '0.75rem' }}>
-              Round {session.roundNumber} · with{' '}
-              <strong style={{ color: 'var(--text)' }}>{session.peer.nickname}</strong>
+            <span className="muted match-round">
+              Round {session.roundNumber} of 2 · with{' '}
+              <strong className="peer-name">{session.peer.nickname}</strong>
               {session.code && (
                 <>
                   {' '}

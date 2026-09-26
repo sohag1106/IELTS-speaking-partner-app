@@ -53,61 +53,44 @@ export function LobbyPanel() {
 
   if (state.queueWaiting) {
     return (
-      <div className="card" style={{ marginTop: '1rem' }}>
-        <div className="row" style={{ justifyContent: 'space-between' }}>
-          <span>
-            <strong>Waiting for a partner…</strong>{' '}
-            <span className="muted">one of you will be the examiner</span>
-          </span>
-          <button type="button" className="secondary" onClick={onCancelQueue}>
-            Cancel
-          </button>
-        </div>
+      <div className="lobby-state">
+        <span>
+          <strong>Waiting for a partner...</strong>{' '}
+          <span className="muted">one of you will be the examiner</span>
+        </span>
+        <button type="button" className="secondary" onClick={onCancelQueue}>
+          Cancel
+        </button>
       </div>
     );
   }
 
   if (pendingCode) {
     return (
-      <div className="card" style={{ marginTop: '1rem' }}>
-        <div className="row" style={{ justifyContent: 'space-between' }}>
-          <span>
-            Share this code:{' '}
-            <strong
-              style={{
-                fontSize: '1.5rem',
-                letterSpacing: '0.3em',
-                color: 'var(--accent)',
-                fontFamily: 'monospace',
-              }}
-            >
-              {pendingCode}
-            </strong>{' '}
-            <span className="muted">— waiting for your friend to join</span>
-          </span>
-          <button
-            type="button"
-            className="secondary"
-            onClick={() => setPendingCode(null)}
-          >
-            Cancel
-          </button>
-        </div>
+      <div className="lobby-state">
+        <span>
+          Share this code: <strong className="room-code">{pendingCode}</strong>{' '}
+          <span className="muted">— waiting for your friend to join</span>
+        </span>
+        <button type="button" className="secondary" onClick={() => setPendingCode(null)}>
+          Cancel
+        </button>
       </div>
     );
   }
 
   if (mode === 'joining') {
     return (
-      <form className="card" style={{ marginTop: '1rem' }} onSubmit={onJoinCode}>
+      <form className="lobby-form" onSubmit={onJoinCode}>
         <div className="row">
           <input
+            className="room-input"
             value={codeInput}
             onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
             placeholder="ROOM CODE"
             maxLength={6}
-            style={{ letterSpacing: '0.2em', textTransform: 'uppercase', width: 180 }}
             autoFocus
+            required
           />
           <button type="submit" disabled={busy || codeInput.trim().length < 6}>
             Join
@@ -116,14 +99,14 @@ export function LobbyPanel() {
             Back
           </button>
         </div>
-        {error && <div className="error-text" style={{ marginTop: '0.5rem' }}>{error}</div>}
+        {error && <div className="error-text">{error}</div>}
       </form>
     );
   }
 
   return (
-    <div style={{ marginTop: '1rem' }}>
-      <div className="row">
+    <div className="lobby-idle">
+      <div className="lobby-actions">
         <button type="button" onClick={onFindMatch} disabled={busy || !state.connected}>
           Find a random partner
         </button>
@@ -144,12 +127,8 @@ export function LobbyPanel() {
           Join with code
         </button>
       </div>
-      {!state.connected && (
-        <p className="muted" style={{ marginTop: '0.5rem' }}>
-          Connecting to server…
-        </p>
-      )}
-      {error && <div className="error-text" style={{ marginTop: '0.5rem' }}>{error}</div>}
+      {!state.connected && <p className="muted small">Connecting to server...</p>}
+      {error && <div className="error-text">{error}</div>}
     </div>
   );
 }

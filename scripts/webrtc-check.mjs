@@ -1,6 +1,6 @@
 /**
  * Two-page end-to-end A/V check with fake media devices.
- * Verifies: match → gesture-gated camera → WebRTC negotiation → connected
+ * Verifies: match → auto camera/mic on join → WebRTC negotiation → connected
  * chip → remote frames decoding, in a real browser (Chrome/Edge headless).
  *
  * Usage: node scripts/webrtc-check.mjs   (dev server must be running)
@@ -8,7 +8,9 @@
 import fs from 'node:fs';
 import puppeteer from 'puppeteer-core';
 
-const APP = 'http://localhost:5173';
+// Pin to IPv4: another project's dev server can squat [::1]:5173, and
+// "localhost" resolves there first, which serves the wrong app.
+const APP = 'http://127.0.0.1:5173';
 const CHROME_CANDIDATES = [
   'C:/Program Files/Google/Chrome/Application/chrome.exe',
   'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
@@ -97,7 +99,11 @@ async function main() {
     process.exit(1);
   }
   try {
-    await fetch(APP);
+    const html = await (await fetch(APP)).text();
+    if (!html.includes('IELTS')) {
+      console.error(`A different app is serving at ${APP} — expected the IELTS dev server.`);
+      process.exit(1);
+    }
   } catch {
     console.error(`Dev server not reachable at ${APP} — start "npm run dev" first.`);
     process.exit(1);
@@ -133,18 +139,19 @@ async function main() {
     check('roles complementary (one examiner, one examinee)', roles[0] !== roles[1], roles.join(' / '));
     check('round 1 shown on both', await p1.page.evaluate(() => document.body.textContent.includes('Round 1 of 2')));
 
-    console.log('ready: gesture-gated camera on both');
-    // Click the ReadyGate button specifically (MediaControls has its own
-    // "Enable camera & mic" that doesn't mark ready), and do it via DOM
-    // .click() so the pinned (z-index:10) mobile video stage can't intercept
-    // the pixel hit the way a real scroll position could.
-    await Promise.all(
-      [p1.page, p2.page].map((pg) => pg.$eval('.ready-gate button', (b) => b.click())),
-    );
-    // start() → markReady() happen in one click; expect no permission error
-    await sleep(2500);
+    console.log('ready: auto camera/mic on both');
+    const pages = [p1.page, p2.page];
+    const examinerIdx = roles[0] === 'examiner' ? 0 : 1;
+    const examineeIdx = 1 - examinerIdx;
+    // Camera + markReady now fire automatically on entering the match room
+    // (getUserMedia → permission prompt → bothReady), so instead of clicking
+    // the ReadyGate, wait for bothReady: the examiner's panel with
+    // "Start Part 1" and the examinee's "Waiting for the examiner" only
+    // render once both players are ready.
+    await waitForButton(pages[examinerIdx], 'Start Part 1', 20000);
+    await waitForText(pages[examineeIdx], 'Waiting for the examiner', 20000);
     const errs = await Promise.all(
-      [p1.page, p2.page].map((pg) => pg.evaluate(() => document.querySelector('.error-text')?.textContent ?? '')),
+      pages.map((pg) => pg.evaluate(() => document.querySelector('.error-text')?.textContent ?? '')),
     );
     check('no camera/permission errors', errs.every((e) => !e), errs.join(' | '));
 
@@ -210,10 +217,6 @@ async function main() {
     });
     check('video stage and exam column both rendered', layoutOk);
 
-    const pages = [p1.page, p2.page];
-    const examinerIdx = roles[0] === 'examiner' ? 0 : 1;
-    const examineeIdx = 1 - examinerIdx;
-
     // Portrait phone: the video must stay pinned while the exam panel scrolls.
     console.log('mobile: video stays pinned while scrolling');
     const savedViewport = pages[examinerIdx].viewport();
@@ -278,8 +281,9 @@ async function main() {
       chips2.join(' / '),
     );
 
-    await Promise.all(pages.map((pg) => clickButton(pg, "I'm ready")));
-    await waitForButton(pages[examineeIdx], 'Start Part 1'); // new examiner panel
+    // Round 2 auto-re-readies the same way (auto camera → markReady), so wait
+    // for the new examiner's panel instead of clicking "I'm ready".
+    await waitForButton(pages[examineeIdx], 'Start Part 1', 20000); // new examiner panel
     const framesAfterSwap = await Promise.all(pages.map(framesFlowing));
     check('A/V still flowing after swap', framesAfterSwap.every(Boolean), JSON.stringify(framesAfterSwap));
 
