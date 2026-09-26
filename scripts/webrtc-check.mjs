@@ -134,13 +134,13 @@ async function main() {
     check('round 1 shown on both', await p1.page.evaluate(() => document.body.textContent.includes('Round 1 of 2')));
 
     console.log('ready: gesture-gated camera on both');
-    // Click the ReadyGate button specifically — MediaControls also has an
-    // "Enable camera & mic" button (first in DOM order) that only starts the
-    // camera without marking ready.
-    await Promise.all([
-      p1.page.click('.ready-gate button'),
-      p2.page.click('.ready-gate button'),
-    ]);
+    // Click the ReadyGate button specifically (MediaControls has its own
+    // "Enable camera & mic" that doesn't mark ready), and do it via DOM
+    // .click() so the pinned (z-index:10) mobile video stage can't intercept
+    // the pixel hit the way a real scroll position could.
+    await Promise.all(
+      [p1.page, p2.page].map((pg) => pg.$eval('.ready-gate button', (b) => b.click())),
+    );
     // start() → markReady() happen in one click; expect no permission error
     await sleep(2500);
     const errs = await Promise.all(
@@ -213,6 +213,35 @@ async function main() {
     const pages = [p1.page, p2.page];
     const examinerIdx = roles[0] === 'examiner' ? 0 : 1;
     const examineeIdx = 1 - examinerIdx;
+
+    // Portrait phone: the video must stay pinned while the exam panel scrolls.
+    console.log('mobile: video stays pinned while scrolling');
+    const savedViewport = pages[examinerIdx].viewport();
+    await pages[examinerIdx].setViewport({ width: 390, height: 700, deviceScaleFactor: 2 });
+    const sticky = await pages[examinerIdx].evaluate(async () => {
+      window.scrollTo(0, 0);
+      const col = document.querySelector('.video-col');
+      if (!col) return { ok: false, why: 'no .video-col' };
+      const pos = getComputedStyle(col).position;
+      // Inject a spacer so the assertion doesn't depend on panel content height.
+      const probe = document.createElement('div');
+      probe.style.height = '1600px';
+      document.querySelector('.exam-col')?.appendChild(probe);
+      window.scrollTo(0, 600);
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const scrollY = window.scrollY;
+      const top = col.getBoundingClientRect().top;
+      probe.remove();
+      window.scrollTo(0, 0);
+      return {
+        ok: pos === 'sticky' && scrollY > 150 && Math.abs(top) <= 2,
+        why: `position=${pos} scrollY=${scrollY} top=${top.toFixed(1)}`,
+      };
+    });
+    await pages[examinerIdx].setViewport(savedViewport);
+    await pages[examinerIdx].evaluate(() => window.scrollTo(0, 0));
+    check('portrait: video pinned at top while page scrolls', sticky.ok, sticky.why);
+
     const framesFlowing = (pg) =>
       pg.evaluate(() =>
         [...document.querySelectorAll('video')].some(

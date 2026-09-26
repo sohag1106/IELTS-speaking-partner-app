@@ -567,20 +567,47 @@ h3 {
 
 /* ── Video stage / media controls ─────────────────────────────── */
 
+/* Stacked (mobile) flow — flex, not grid: a sticky grid item is trapped in
+   its own row, while a flex item can stick across the whole container. */
 .match-layout {
-  display: grid;
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 1rem;
-  align-items: start;
 }
 
 .exam-col {
   min-width: 0;
 }
 
+/* Pin the video to the top so the exam panel scrolls underneath it. */
+@media (max-width: 899px) {
+  .video-col {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--bg);
+    padding-bottom: 0.25rem;
+  }
+
+  /* Cap the stage so a pinned video never swallows a short viewport
+     (tablets, landscape, small laptops) — the panel must stay reachable. */
+  .video-main {
+    max-height: 40vh;
+  }
+}
+
+/* Short/landscape viewports: a pinned video would eat the screen — don't pin. */
+@media (max-width: 899px) and (max-height: 520px) {
+  .video-col {
+    position: static;
+  }
+}
+
 @media (min-width: 900px) {
   .match-layout {
+    display: grid;
     grid-template-columns: minmax(300px, 400px) minmax(0, 1fr);
+    align-items: start;
   }
 
   .video-col {
