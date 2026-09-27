@@ -102,14 +102,25 @@ counts, but `http://192.168.x.x:5173` does not. Pick one:
 
 ## Production notes (please read before deploying)
 
-- **TURN is mandatory.** The dev config (`GET /api/config`) ships Google STUN
-  plus a public Open Relay TURN — fine for testing, **not for production**
-  (rate-limited, unreliable, not yours). Real deployments behind NATs/symmetric
-  NAT need your own TURN:
-  - self-host [coturn](https://github.com/coturn/coturn), or
-  - use a hosted service (Metered, Twilio, etc.),
-  then set `STUN_URL`, `TURN_URL`, `TURN_USERNAME`, `TURN_CREDENTIAL` in the
-  server environment.
+- **TURN is mandatory for mixed networks.** Two people on the *same* Wi-Fi
+  connect peer-to-peer with STUN alone — but mobile data ↔ Wi-Fi sits behind
+  carrier CGNAT, and without a TURN relay those pairs loop on *Connecting…*
+  and end at *Connection failed*. The config endpoint (`GET /api/config`) uses
+  **Cloudflare TURN** (1,000 GB/month free, ~1 h credentials that the server
+  renews — the keys never reach the browser):
+
+  1. Create a free account at <https://dash.cloudflare.com>.
+  2. Dashboard → **Realtime → TURN Server → Create**. Copy the **Turn Token
+     ID** and the **API Token**.
+  3. Set them in the server environment as `CF_TURN_KEY_ID` and
+     `CF_TURN_TOKEN` — locally in `server/.env`; on Render in
+     *Environment → Add Variable* **one at a time** (never *Add from .env*).
+  4. Verify: `node scripts/turn-check.mjs` must print
+     `ALL PASSED — TURN relay candidates gather`.
+
+  Alternatives: self-host [coturn](https://github.com/coturn/coturn) or any
+  hosted TURN — set `TURN_URL` (+ `TURN_USERNAME`/`TURN_CREDENTIAL`) instead.
+  With neither configured the server logs a warning and serves STUN only.
 - **HTTPS everywhere** — cameras require it; terminate TLS in front of the
   client (and keep the Socket.IO proxy on the same origin).
 - **State is in-memory** — match/queue state lives in the server process; a
@@ -130,7 +141,8 @@ counts, but `http://192.168.x.x:5173` does not. Pick one:
 | `PART2_PREP_SECONDS` | `60` | Cue-card prep time |
 | `PART2_TALK_SECONDS` | `120` | Cue-card speaking time |
 | `STUN_URL` | Google STUN | STUN server |
-| `TURN_URL` / `TURN_USERNAME` / `TURN_CREDENTIAL` | Open Relay | TURN server (replace for prod) |
+| `CF_TURN_KEY_ID` / `CF_TURN_TOKEN` | — | Cloudflare TURN key (recommended, 1 TB/mo free) |
+| `TURN_URL` / `TURN_USERNAME` / `TURN_CREDENTIAL` | — | Static TURN server (coturn etc.), used if set |
 
 ## Project layout
 

@@ -23,6 +23,8 @@ export interface Profile {
 
 export interface IceConfig {
   iceServers: RTCIceServer[];
+  /** Epoch ms when TURN credentials stop working (0/absent = no expiry). */
+  turnExpiresAt?: number;
   part2: { prepSeconds: number; talkSeconds: number };
 }
 
