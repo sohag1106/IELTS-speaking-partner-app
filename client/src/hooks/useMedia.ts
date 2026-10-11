@@ -18,7 +18,7 @@ export interface UseMediaResult {
 /**
  * Local media capture. MatchPage calls `start()` automatically the moment a
  * match is found — Chrome/Edge prompt for permission without needing a tap —
- * while ReadyGate and MediaControls keep manual buttons as the fallback.
+ * while ReadyGate and the ControlDock keep manual buttons as the fallback.
  */
 export function useMedia(): UseMediaResult {
   const [stream, setStream] = useState<MediaStream | null>(null);

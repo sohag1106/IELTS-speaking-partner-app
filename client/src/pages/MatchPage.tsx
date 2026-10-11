@@ -1,4 +1,6 @@
 import { useEffect } from 'react';
+import { ControlDock } from '../components/ControlDock';
+import { TalkCountdown } from '../components/CountdownStrip';
 import { DisconnectedBanner } from '../components/DisconnectedBanner';
 import { CueCardView } from '../components/CueCardView';
 import { ExaminerPanel } from '../components/ExaminerPanel';
@@ -84,6 +86,16 @@ export function MatchPage() {
   // room to type in) and the card shrinks to a summary that scrolls inline.
   const showCueStrip = examPrepHidden && !keyboardOpen;
 
+  // Part 2, speaking: the examinee watches the examiner's face while they talk,
+  // so the seconds belong under that face on a phone.
+  const showTalkCountdown =
+    phoneLayout && session.role === 'examinee' && session.part === 2 && session.stage === 'talk';
+
+  /** The dock's Notes button: the field may be below the fold on a phone. */
+  const scrollToNotes = () => {
+    document.querySelector('.scratchpad textarea')?.scrollIntoView({ block: 'center' });
+  };
+
   const layoutClass = [
     'match-layout',
     showStage ? '' : 'no-video',
@@ -126,9 +138,6 @@ export function MatchPage() {
               )}
             </span>
           </div>
-          <button type="button" className="danger" onClick={leaveMatch}>
-            Leave
-          </button>
         </div>
       </div>
       <div className={layoutClass}>
@@ -140,22 +149,45 @@ export function MatchPage() {
               peerName={session.peer.nickname}
               peerMic={session.peerMic}
               peerCam={session.peerCam}
-              selfMic={media.mic}
               selfCam={media.cam}
               hasMedia={Boolean(media.stream)}
-              onToggleMic={media.toggleMic}
-              onToggleCam={media.toggleCam}
-              onEnable={() => void media.start()}
-              enabling={media.starting}
               connectionState={connectionState}
-              onRetry={retry}
-              mediaError={media.error}
+              // While the gate is up it owns the camera error and the recovery
+              // path; letting the stage repeat the raw message says it twice.
+              mediaError={bothReady ? media.error : null}
             />
-            {showCueStrip && <CueCardView card={session.card!} timer={session.timer} stage="prep" />}
+            {showCueStrip && (
+              <CueCardView
+                card={session.card!}
+                timer={session.timer}
+                stage="prep"
+                compact={phoneLayout}
+              />
+            )}
+            {/* Stop 07: the talk countdown sits directly under the face being
+                watched, not down in the panel below the fold. */}
+            {showTalkCountdown && session.timer && <TalkCountdown timer={session.timer} />}
           </div>
         )}
         <div className="exam-col">{body}</div>
       </div>
+      {showStage && (
+        <ControlDock
+          hasMedia={Boolean(media.stream)}
+          mic={media.mic}
+          cam={media.cam}
+          onToggleMic={media.toggleMic}
+          onToggleCam={media.toggleCam}
+          onEnable={() => void media.start()}
+          enabling={media.starting}
+          connectionState={connectionState}
+          peerMic={session.peerMic}
+          peerCam={session.peerCam}
+          onRetry={retry}
+          onNotes={examPrepHidden ? scrollToNotes : undefined}
+          onLeave={leaveMatch}
+        />
+      )}
     </div>
   );
 }

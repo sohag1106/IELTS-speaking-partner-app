@@ -11,7 +11,11 @@ interface ReadyGateProps {
  * Round lobby. MatchPage requests the camera automatically and this gate
  * confirms readiness by itself once the stream exists, so the happy path
  * needs no click — buttons only appear as fallbacks when permission is
- * denied or the ready-ack fails.
+ * denied or the ready-ack fails. Do not "fix" this into a Ready button.
+ *
+ * The video stage renders above this card (MatchPage), so the room already
+ * looks real; what this card adds is priming the permission sheet before the
+ * browser throws it, and naming the recovery path if it is refused.
  */
 export function ReadyGate({ media }: ReadyGateProps) {
   const { state, markReady } = useMatch();
@@ -93,15 +97,38 @@ export function ReadyGate({ media }: ReadyGateProps) {
           )}
         </div>
       ) : (
-        <p className="ready-status">
+        <div className="permission-prime" role="status">
           <span className="spinner" aria-hidden="true" />
-          {media.starting
-            ? 'Allow camera & microphone access when your browser asks…'
-            : 'Getting you ready…'}
-        </p>
+          <div>
+            <p className="permission-prime-lead">
+              {media.starting
+                ? 'Allow camera and microphone'
+                : 'Getting you ready…'}
+            </p>
+            {media.starting && (
+              <p className="permission-prime-sub">
+                Your browser is about to ask. Choose <strong>Allow</strong> — without it your
+                partner practises against an avatar, and you can&apos;t be heard.
+              </p>
+            )}
+          </div>
+        </div>
       )}
-      {cameraFailed && media.error && <p className="error-text">{media.error}</p>}
-      {err && <p className="error-text">{err}</p>}
+
+      {failed && (
+        <div className="notif bad deny-help" role="alert">
+          <span aria-hidden="true">⚠</span>
+          <span>
+            {err ?? media.error ?? 'Camera access failed.'}{' '}
+            <strong>To fix it:</strong> tap the padlock (or the camera icon) in the address
+            bar → Allow → reload this page.
+          </span>
+        </div>
+      )}
+
+      {!session.youReady && !failed && !hasStream && !media.starting && (
+        <p className="muted small">Reason to allow: your partner can see and hear you.</p>
+      )}
     </div>
   );
 }

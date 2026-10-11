@@ -1,5 +1,4 @@
 import type { ConnectionState } from '../hooks/useWebRTC';
-import { MediaControls } from './MediaControls';
 import { VideoTile } from './VideoTile';
 
 export interface VideoStageProps {
@@ -8,22 +7,17 @@ export interface VideoStageProps {
   peerName: string;
   peerMic: boolean;
   peerCam: boolean;
-  selfMic: boolean;
   selfCam: boolean;
   hasMedia: boolean;
-  onToggleMic: () => void;
-  onToggleCam: () => void;
-  onEnable: () => void;
-  enabling: boolean;
   connectionState: ConnectionState;
-  onRetry: () => void;
   mediaError?: string | null;
 }
 
 /**
  * Side-by-side (desktop) / stacked (portrait) stage: peer fills the frame,
  * self-view floats picture-in-picture. Always rendered while the match is
- * live so remote audio keeps playing.
+ * live so remote audio keeps playing. The controls live in the persistent
+ * ControlDock, not here — they need to survive this column being hidden.
  */
 export function VideoStage({
   peerStream,
@@ -31,15 +25,9 @@ export function VideoStage({
   peerName,
   peerMic,
   peerCam,
-  selfMic,
   selfCam,
   hasMedia,
-  onToggleMic,
-  onToggleCam,
-  onEnable,
-  enabling,
   connectionState,
-  onRetry,
   mediaError,
 }: VideoStageProps) {
   return (
@@ -72,20 +60,11 @@ export function VideoStage({
           />
         </div>
       </div>
-      <MediaControls
-        hasMedia={hasMedia}
-        mic={selfMic}
-        cam={selfCam}
-        onToggleMic={onToggleMic}
-        onToggleCam={onToggleCam}
-        onEnable={onEnable}
-        enabling={enabling}
-        connectionState={connectionState}
-        peerMic={peerMic}
-        peerCam={peerCam}
-        onRetry={onRetry}
-        error={mediaError}
-      />
+      {mediaError && <p className="error-text media-error">{mediaError}</p>}
+      {/* Kept so the e2e checks that read call state off the stage still work. */}
+      <span className="sr-only" aria-live="polite">
+        {connectionState === 'connected' ? 'Connected' : 'Connecting'}
+      </span>
     </div>
   );
 }

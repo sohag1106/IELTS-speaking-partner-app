@@ -88,7 +88,7 @@ async function setupPlayer(browser, nickname) {
   await page.waitForSelector('input[placeholder="Your nickname"]', { timeout: 15000 });
   await page.type('input[placeholder="Your nickname"]', nickname);
   await page.click('form button[type="submit"]');
-  await waitForButton(page, 'Find a random partner');
+  await waitForButton(page, 'Find a partner');
   return { ctx, page };
 }
 
@@ -128,7 +128,7 @@ async function main() {
     check('both players reached the lobby', true);
 
     console.log('match: queue both');
-    await Promise.all([clickButton(p1.page, 'Find a random partner'), clickButton(p2.page, 'Find a random partner')]);
+    await Promise.all([clickButton(p1.page, 'Find a partner'), clickButton(p2.page, 'Find a partner')]);
     await Promise.all([
       p1.page.waitForSelector('.role-tag', { timeout: 15000 }),
       p2.page.waitForSelector('.role-tag', { timeout: 15000 }),

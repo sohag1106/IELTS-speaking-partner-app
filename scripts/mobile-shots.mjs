@@ -62,14 +62,14 @@ async function play(browser, nick) {
   await page.waitForSelector('input[placeholder="Your nickname"]');
   await page.type('input[placeholder="Your nickname"]', nick);
   await page.click('form button[type="submit"]');
-  await waitBtn(page, 'Find a random partner');
+  await waitBtn(page, 'Find a partner');
   return { ctx, page };
 }
 
 const box = (sel) =>
   `(() => { const e = document.querySelector(${JSON.stringify(sel)}); if (!e) return null;
     const r = e.getBoundingClientRect();
-    return { top: Math.round(r.top), bottom: Math.round(r.bottom), h: Math.round(r.height) }; })()`;
+    return { top: Math.round(r.top), bottom: Math.round(r.bottom), h: Math.round(r.height), pos: getComputedStyle(e).position }; })()`;
 
 async function main() {
   const executablePath = CHROME_CANDIDATES.find((p) => fs.existsSync(p));
@@ -87,7 +87,7 @@ async function main() {
   try {
     const a = await play(browser, 'ShotA');
     const b = await play(browser, 'ShotB');
-    await Promise.all([click(a.page, 'Find a random partner'), click(b.page, 'Find a random partner')]);
+    await Promise.all([click(a.page, 'Find a partner'), click(b.page, 'Find a partner')]);
     await Promise.all([
       a.page.waitForSelector('.role-tag', { timeout: 20000 }),
       b.page.waitForSelector('.role-tag', { timeout: 20000 }),
@@ -111,7 +111,7 @@ async function main() {
           (document.querySelector('.video-col').getBoundingClientRect().height / window.innerHeight) * 100,
         ),
       }),
-      { video: box('.video-main'), controls: box('.media-controls') },
+      { video: box('.video-main'), controls: box('.control-dock') },
     );
     console.log('examiner strip:', JSON.stringify(strip));
 
@@ -190,13 +190,14 @@ async function main() {
     );
     await sleep(1200);
     const talk = await examinee.evaluate(() => {
-      const ring = document.querySelector('.countdown');
-      const r = ring ? ring.getBoundingClientRect() : null;
+      const strip = document.querySelector('.video-col .countdown-strip');
+      const s = strip ? strip.getBoundingClientRect() : null;
       const notes = document.querySelector('.scratchpad').getBoundingClientRect();
       return {
-        hasRing: !!ring,
-        ringTop: r ? Math.round(r.top) : null,
-        ringInView: r ? r.top >= 0 && r.bottom <= window.innerHeight : false,
+        hasStrip: !!strip,
+        stripTop: s ? Math.round(s.top) : null,
+        // Stop 07: the seconds sit directly under the pinned face.
+        stripInView: s ? s.top >= 0 && s.bottom <= window.innerHeight : false,
         videoH: Math.round(document.querySelector('.video-main').getBoundingClientRect().height),
         cardGone: !document.querySelector('.video-col .cue-card'),
         notesTop: Math.round(notes.top),
@@ -206,14 +207,17 @@ async function main() {
     console.log('talk:', JSON.stringify(talk));
     await examinee.screenshot({ path: '/tmp/mobile-4-talk.png' });
 
-    // Scroll: the ring should stay pinned under the strip.
+    // Scroll: the strip is pinned with the face, so it stays put.
     await examinee.evaluate(() => window.scrollTo(0, 600));
     await sleep(600);
     const talkScrolled = await examinee.evaluate(() => {
-      const ring = document.querySelector('.countdown').getBoundingClientRect();
-      return { ringTop: Math.round(ring.top), sticky: getComputedStyle(document.querySelector('.video-col')).position };
+      const strip = document.querySelector('.video-col .countdown-strip');
+      return {
+        stripTop: strip ? Math.round(strip.getBoundingClientRect().top) : null,
+        sticky: getComputedStyle(document.querySelector('.video-col')).position,
+      };
     });
-    console.log('talk scrolled (ring is NOT pinned — it scrolls with the panel):', JSON.stringify(talkScrolled));
+    console.log('talk scrolled (strip pinned with the face):', JSON.stringify(talkScrolled));
   } finally {
     await browser.close();
   }
