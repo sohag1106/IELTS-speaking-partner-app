@@ -1073,12 +1073,159 @@ a {
   .video-main {
     max-height: 40vh;
   }
+
+  /* Face strip: while the panel is the working surface (examiner reading the
+     question bank, examinee in Part 2), the pinned video shrinks to a short
+     band so the questions and the cue card get the screen. */
+  .strip-video .video-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding-bottom: 0.15rem;
+  }
+
+  .strip-video .video-main {
+    aspect-ratio: auto;
+    height: clamp(120px, 19vh, 150px);
+    max-height: none;
+  }
+
+  .strip-video .media-controls {
+    gap: 0.4rem;
+  }
+
+  /* Keep the pinned band short: smaller control chips when the stage is a
+     strip, so the row stays on one line on a narrow phone. */
+  .strip-video .ctl {
+    padding: 0.38rem 0.65rem;
+    font-size: 0.8rem;
+  }
+
+  .strip-video .conn-chip {
+    font-size: 0.72rem;
+    padding: 0.24rem 0.55rem;
+  }
+
+  /* The strip is far shorter than a normal tile, so the placeholder has to
+     shrink with it or it overflows the frame. */
+  .strip-video .video-placeholder {
+    gap: 0.35rem;
+    font-size: 0.82rem;
+  }
+
+  .strip-video .video-placeholder-avatar {
+    width: 36px;
+    height: 36px;
+    font-size: 1.05rem;
+  }
+
+  /* Prep: the cue card must stay on screen — it is the whole point of the
+     minute. MatchPage moves it into the pinned column, so it travels with the
+     video instead of scrolling away while the notes are typed. The copy left in
+     the exam panel is the one that scrolls, and is hidden here. */
+  .sticky-cue .video-col .cue-card {
+    padding: 0.8rem 1rem 0.85rem;
+  }
+
+  .sticky-cue .video-col .cue-card .cue-badge,
+  .sticky-cue .video-col .cue-card .cue-lead,
+  .sticky-cue:not(.keyboard-up) .exam-col .cue-card {
+    display: none;
+  }
+
+  .sticky-cue .video-col .cue-card .cue-prompt {
+    font-size: 1.02rem;
+    margin-top: 0.5rem;
+  }
+
+  .sticky-cue .video-col .cue-card .cue-bullets {
+    margin-bottom: 0;
+  }
+
+  .sticky-cue .video-col .cue-card .cue-bullets li {
+    margin: 0.2rem 0;
+  }
+
+  /* Nobody is watching a 60-second prep minute — the card is doing the work —
+     so the strip gets as short as it can, which buys the card real room. */
+  .sticky-cue .video-main {
+    height: clamp(72px, 11vh, 92px);
+  }
+
+  .sticky-cue .video-col .cue-card-head {
+    gap: 0.5rem;
+  }
+
+  .sticky-cue .video-col .countdown,
+  .sticky-cue .video-col .countdown svg {
+    width: 4rem;
+    height: 4rem;
+  }
+
+  .sticky-cue .video-col .countdown-time {
+    font-size: 0.92rem;
+  }
+
+  .sticky-cue .video-col .countdown-label {
+    margin-bottom: 7px;
+    font-size: 0.55rem;
+  }
+
+  /* Keyboard up during prep: the notes field is the working surface, and a
+     pinned band plus a card plus a keyboard leaves nowhere to type. Take the
+     whole column out — the media elements stay mounted so remote audio keeps
+     playing, and the card comes back as the full scrollable copy below,
+     compacted so the notes field has room to breathe. */
+  .keyboard-up .video-col {
+    display: none;
+  }
+
+  .keyboard-up .exam-col .cue-card {
+    padding: 0.7rem 0.95rem;
+  }
+
+  .keyboard-up .exam-col .cue-card .cue-badge,
+  .keyboard-up .exam-col .cue-card .cue-lead,
+  .keyboard-up .exam-col .cue-card > .muted {
+    display: none;
+  }
+
+  .keyboard-up .exam-col .cue-card .cue-prompt {
+    font-size: 1rem;
+    margin-top: 0.35rem;
+  }
+
+  .keyboard-up .exam-col .cue-card .countdown,
+  .keyboard-up .exam-col .cue-card .countdown svg {
+    width: 4.4rem;
+    height: 4.4rem;
+  }
+
+  .keyboard-up .exam-col .cue-card .countdown-time {
+    font-size: 1rem;
+  }
+
+  .keyboard-up .exam-col .cue-card .countdown-label {
+    margin-bottom: 8px;
+    font-size: 0.6rem;
+  }
 }
 
 /* Short/landscape viewports: a pinned video would eat the screen — don't pin. */
 @media (max-width: 899px) and (max-height: 520px) {
   .video-col {
     position: static;
+  }
+
+  .strip-video .video-main {
+    height: clamp(88px, 22vh, 120px);
+  }
+
+  /* The face strip is short enough that pinning costs little even here, and
+     during Part 2 the cue card rides in this column — losing the pin would
+     scroll the card away. Keep it pinned. */
+  .strip-video .video-col {
+    position: sticky;
   }
 }
 

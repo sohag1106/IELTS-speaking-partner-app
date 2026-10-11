@@ -1,0 +1,1874 @@
+<title>Speaking Partner Mobile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap">
+
+<style>
+/* ═══════════════════════════════════════════════════════════════════
+   IELTS SPEAKING PARTNER — mobile UI specification
+   Colour  cool graphite paper (blue-biased neutrals) + one product cyan
+   Type    Bricolage Grotesque (spec display) · IBM Plex Sans (spec body)
+           IBM Plex Mono (data, labels, codes) · Inter (the app's own face)
+   Layout  studio spec sheet: context rail · device column · annotation
+           column, one horizontal rule per stop of the journey
+   ═══════════════════════════════════════════════════════════════════ */
+:root{
+  --paper:#eef2f7; --paper-2:#e4eaf2; --card:#ffffff;
+  --ink:#0e1622; --ink-2:#465468; --ink-3:#78849a;
+  --line:#d7dfea; --line-2:#bcc7d6;
+  --acc:#0a6ea6; --acc-soft:#dceefa;
+  --ok:#0f7355; --warn:#8a5603; --bad:#a32b43; --new:#6d4bc4;
+  --bezel:#0a0d14;
+  --shadow:0 1px 2px rgba(14,22,34,.05), 0 14px 30px -14px rgba(14,22,34,.2);
+  --display:'Bricolage Grotesque','IBM Plex Sans',system-ui,sans-serif;
+  --body:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#0b1017; --paper-2:#080c12; --card:#141b26;
+    --ink:#e7edf7; --ink-2:#a3b0c3; --ink-3:#6e7b8f;
+    --line:#222c3a; --line-2:#33404f;
+    --acc:#4cc0ee; --acc-soft:#0d2634;
+    --ok:#3fcf9c; --warn:#dda63a; --bad:#f28098; --new:#a98cf0;
+    --bezel:#04060a;
+    --shadow:0 1px 2px rgba(0,0,0,.45), 0 18px 36px -18px rgba(0,0,0,.75);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0b1017; --paper-2:#080c12; --card:#141b26;
+  --ink:#e7edf7; --ink-2:#a3b0c3; --ink-3:#6e7b8f;
+  --line:#222c3a; --line-2:#33404f;
+  --acc:#4cc0ee; --acc-soft:#0d2634;
+  --ok:#3fcf9c; --warn:#dda63a; --bad:#f28098; --new:#a98cf0;
+  --bezel:#04060a;
+  --shadow:0 1px 2px rgba(0,0,0,.45), 0 18px 36px -18px rgba(0,0,0,.75);
+  color-scheme:dark;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--body); font-size:16px; line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{
+  max-width:1280px; margin-inline:auto;
+  padding-inline:clamp(16px,4vw,44px); padding-block:0 6rem;
+}
+h1,h2,h3,h4{margin:0; text-wrap:balance}
+p{margin:0}
+a{color:var(--acc)}
+code{font-family:var(--mono); font-size:.86em}
+
+/* ── Masthead ───────────────────────────────────────────────── */
+.masthead{padding-block:clamp(2.5rem,7vw,5rem) 2rem; border-bottom:1px solid var(--line)}
+.eyebrow{
+  font-family:var(--mono); font-size:.72rem; font-weight:600;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--acc);
+}
+.masthead h1{
+  font-family:var(--display); font-weight:700;
+  font-size:clamp(2.2rem,6vw,3.6rem); line-height:1.03;
+  letter-spacing:-.025em; margin-top:.7rem; max-width:20ch;
+}
+.deck{
+  margin-top:1.1rem; max-width:62ch; font-size:clamp(1rem,2.2vw,1.12rem);
+  color:var(--ink-2); line-height:1.62;
+}
+.meta{
+  display:flex; flex-wrap:wrap; gap:.35rem 2.2rem; margin-top:2rem;
+  padding-top:1.4rem; border-top:1px solid var(--line);
+  font-family:var(--mono); font-size:.76rem; color:var(--ink-3);
+}
+.meta b{color:var(--ink-2); font-weight:500}
+
+/* ── Legend ─────────────────────────────────────────────────── */
+.legend{
+  display:flex; flex-wrap:wrap; gap:1.6rem 2.6rem;
+  padding-block:1.35rem; border-bottom:1px solid var(--line);
+}
+.legend-item{display:flex; gap:.6rem; align-items:flex-start; max-width:34ch}
+.legend-item p{font-size:.82rem; color:var(--ink-2); line-height:1.5; margin:0}
+.dot{
+  width:9px; height:9px; border-radius:50%; flex:none; margin-top:.45rem;
+  background:currentColor; box-shadow:0 0 0 3px color-mix(in srgb,currentColor 18%,transparent);
+}
+.dot.live{color:var(--ok)} .dot.change{color:var(--warn)}
+.dot.new{color:var(--new)} .dot.tension{color:var(--acc)}
+
+/* ── Stops ──────────────────────────────────────────────────── */
+.stop{
+  display:grid;
+  grid-template-columns:minmax(0,168px) minmax(0,1fr) minmax(0,310px);
+  gap:clamp(1.5rem,3.4vw,3.25rem);
+  align-items:start;
+  padding-block:clamp(2.75rem,5vw,4.5rem);
+  border-bottom:1px solid var(--line);
+}
+.rail{position:sticky; top:1.5rem; display:flex; flex-direction:column; gap:.55rem}
+.rail-no{
+  font-family:var(--mono); font-size:1.9rem; font-weight:600;
+  line-height:1; color:var(--ink); letter-spacing:-.03em;
+}
+.rail-no span{color:var(--ink-3); font-size:1rem}
+.rail h3{font-family:var(--display); font-size:1.12rem; font-weight:650; letter-spacing:-.015em; line-height:1.25}
+.rail .route{
+  font-family:var(--mono); font-size:.72rem; color:var(--acc);
+  background:var(--acc-soft); border-radius:5px; padding:.22rem .42rem;
+  align-self:flex-start; word-break:break-all;
+}
+.rail .when{font-size:.78rem; color:var(--ink-3); line-height:1.45}
+
+/* ── Device column ──────────────────────────────────────────── */
+.device{display:flex; flex-direction:column; gap:1.1rem; min-width:0}
+.picker{display:flex; flex-wrap:wrap; gap:.4rem}
+.picker button{
+  font-family:var(--mono); font-size:.72rem; font-weight:500;
+  color:var(--ink-2); background:transparent; cursor:pointer;
+  border:1px solid var(--line-2); border-radius:999px;
+  padding:.34rem .68rem; transition:.15s ease;
+}
+.picker button:hover{border-color:var(--acc); color:var(--ink)}
+.picker button[aria-pressed="true"]{
+  background:var(--ink); border-color:var(--ink); color:var(--paper);
+}
+.phone{
+  width:min(390px,100%);
+  background:var(--bezel); border-radius:3.1rem; padding:.62rem;
+  box-shadow:var(--shadow); position:relative;
+}
+.phone::after{
+  content:""; position:absolute; top:.88rem; left:50%; transform:translateX(-50%);
+  width:.45rem; height:.45rem; border-radius:50%; background:#01030a;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.07);
+}
+.ph{
+  /* The app itself is deliberately dark-first; this mock commits to that
+     one look and sets every colour explicitly rather than theming twice. */
+  --app-bg:#0a0f19; --app-surface:#131c2b; --app-surface-2:#1a2434;
+  --app-line:rgba(148,163,184,.17); --app-line-2:rgba(148,163,184,.34);
+  --app-text:#e9eefa; --app-dim:#93a1b8; --app-faint:#6a788e;
+  --app-acc:#38bdf8; --app-acc-2:#6366f1;
+  --app-ok:#34d399; --app-warn:#fbbf24; --app-bad:#f87171; --app-mag:#818cf8;
+  --app-font:Inter,system-ui,-apple-system,'Segoe UI',sans-serif;
+  position:relative; display:flex; flex-direction:column;
+  height:44rem; max-height:min(78vh,44rem); overflow:hidden;
+  background:var(--app-bg); color:var(--app-text);
+  border-radius:2.55rem; font-family:var(--app-font);
+  font-size:.9rem; line-height:1.45; letter-spacing:-.005em;
+}
+.screen{display:none; flex-direction:column; flex:1; min-height:0}
+.screen.on{display:flex}
+.statusbar{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:.55rem 1.5rem .1rem; font-size:.72rem; font-weight:600;
+  color:var(--app-text); flex:none; font-variant-numeric:tabular-nums;
+}
+.statusbar svg{display:block; opacity:.9}
+.appbar{
+  display:flex; align-items:center; gap:.6rem; flex:none;
+  padding:.5rem .85rem .6rem; border-bottom:1px solid var(--app-line);
+}
+.appbar .brand{
+  display:flex; align-items:center; gap:.45rem;
+  font-weight:700; font-size:.83rem; letter-spacing:-.01em;
+}
+.mark{
+  width:1.55rem; height:1.55rem; border-radius:.5rem; display:grid; place-items:center;
+  background:linear-gradient(135deg,var(--app-acc),var(--app-acc-2));
+  font-size:.75rem; box-shadow:0 3px 10px rgba(56,189,248,.32);
+}
+.appbar .grow{flex:1}
+.iconbtn{
+  width:2.1rem; height:2.1rem; border-radius:50%; flex:none;
+  display:grid; place-items:center; font-size:.72rem; font-weight:700;
+  background:rgba(148,163,184,.13); border:1px solid var(--app-line-2);
+  color:var(--app-text);
+}
+.iconbtn.on{border-color:rgba(52,211,153,.55); color:var(--app-ok)}
+.conn{display:flex; align-items:center; gap:.35rem; font-size:.66rem; color:var(--app-faint)}
+.conn i{width:.42rem; height:.42rem; border-radius:50%; background:var(--app-ok); display:block}
+.conn.bad i{background:var(--app-bad)}
+
+.body{flex:1; min-height:0; display:flex; flex-direction:column; gap:.7rem; padding:.85rem; overflow:hidden}
+.body.scroll{overflow-y:auto}
+.deck{display:flex; flex-direction:column; gap:.55rem; min-height:0; overflow-y:auto; padding-right:.1rem}
+
+/* app primitives */
+.tag{
+  display:inline-flex; align-items:center; gap:.3rem; align-self:flex-start;
+  font-size:.66rem; font-weight:700; letter-spacing:.07em; text-transform:uppercase;
+  padding:.24rem .55rem; border-radius:999px; white-space:nowrap;
+}
+.tag.ex{color:var(--app-acc); background:rgba(56,189,248,.14); border:1px solid rgba(56,189,248,.5)}
+.tag.ee{color:var(--app-ok); background:rgba(52,211,153,.12); border:1px solid rgba(52,211,153,.45)}
+.tag.p{color:var(--app-dim); background:rgba(148,163,184,.1); border:1px solid var(--app-line-2)}
+.tag.warn{color:var(--app-warn); background:rgba(251,191,36,.12); border:1px solid rgba(251,191,36,.45)}
+.tag.acc{color:var(--app-mag); background:rgba(129,140,248,.14); border:1px solid rgba(129,140,248,.45)}
+.tag.solid{color:#04121e; background:var(--app-acc); border:1px solid var(--app-acc)}
+h4.ph-h{font-size:1rem; font-weight:700; letter-spacing:-.02em; margin:0}
+.ph-sub{font-size:.76rem; color:var(--app-dim); line-height:1.45}
+.ph-fine{font-size:.68rem; color:var(--app-faint); line-height:1.5}
+.box{
+  background:var(--app-surface); border:1px solid var(--app-line);
+  border-radius:.85rem; padding:.7rem .8rem; display:flex; flex-direction:column; gap:.45rem;
+}
+.box.flat{background:rgba(148,163,184,.06)}
+.row{display:flex; align-items:center; gap:.55rem}
+.row.between{justify-content:space-between}
+.grow{flex:1; min-width:0}
+.truncate{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+
+/* buttons */
+.cta{
+  display:flex; align-items:center; justify-content:center; gap:.4rem;
+  width:100%; min-height:3.05rem; border-radius:.9rem; border:none;
+  background:linear-gradient(135deg,var(--app-acc),var(--app-acc-2));
+  color:#fff; font:inherit; font-weight:700; font-size:.9rem;
+  box-shadow:0 6px 18px rgba(56,189,248,.24); cursor:pointer;
+}
+.cta.ghost{
+  background:rgba(148,163,184,.1); color:var(--app-text);
+  border:1px solid var(--app-line-2); box-shadow:none;
+}
+.cta.danger{background:linear-gradient(135deg,#fb7185,#ef4444); box-shadow:0 6px 18px rgba(248,113,113,.2)}
+.cta.sm{min-height:2.5rem; font-size:.82rem; border-radius:.7rem}
+.cta:disabled{opacity:.45; box-shadow:none}
+.pair{display:grid; grid-template-columns:1fr 1fr; gap:.5rem}
+.tap{
+  font:inherit; color:var(--app-text); background:rgba(148,163,184,.08);
+  border:1px solid var(--app-line-2); border-radius:.9rem; padding:.6rem .7rem;
+  text-align:left; display:flex; flex-direction:column; gap:.2rem; cursor:pointer;
+}
+.tap strong{font-size:.8rem; font-weight:650}
+.tap span{font-size:.66rem; color:var(--app-faint)}
+
+/* video */
+.stage{
+  position:relative; flex:none; border-radius:.95rem; overflow:hidden;
+  background:#000; border:1px solid var(--app-line-2); aspect-ratio:4/3;
+  display:grid; place-items:center;
+}
+.stage.thin{aspect-ratio:auto; height:2.7rem; border-radius:.6rem}
+.stage.thin .faces{display:none}
+.faces{
+  display:flex; flex-direction:column; align-items:center; gap:.4rem;
+  color:var(--app-faint); font-size:.72rem;
+}
+.faces b{
+  width:2.9rem; height:2.9rem; border-radius:50%; display:grid; place-items:center;
+  background:rgba(148,163,184,.14); border:1px solid var(--app-line-2);
+  color:var(--app-acc); font-size:1.1rem; font-weight:700;
+}
+.pip{
+  position:absolute; right:.4rem; bottom:.4rem; width:27%; max-width:6rem;
+  aspect-ratio:3/4; border-radius:.5rem; overflow:hidden;
+  background:#111a2a; border:1px solid var(--app-line-2);
+  display:grid; place-items:center; font-size:.6rem; color:var(--app-faint);
+}
+.vlabel{
+  position:absolute; left:.4rem; bottom:.4rem; font-size:.64rem; color:#fff;
+  background:rgba(0,0,0,.55); border-radius:999px; padding:.12rem .45rem;
+}
+.vbadge{
+  position:absolute; top:.4rem; right:.4rem; display:flex; gap:.25rem;
+  font-size:.6rem; color:var(--app-warn);
+}
+.vbadge span{background:rgba(0,0,0,.6); border:1px solid rgba(251,191,36,.5); border-radius:999px; padding:.1rem .4rem}
+.dock{display:flex; gap:.5rem; justify-content:center; flex:none}
+.dock button{
+  width:3.35rem; height:3.35rem; border-radius:50%; display:grid; place-items:center;
+  font-size:1.05rem; background:rgba(148,163,184,.13); color:var(--app-text);
+  border:1px solid var(--app-line-2); cursor:pointer; font-family:inherit;
+}
+.dock button.off{color:var(--app-warn); border-color:rgba(251,191,36,.5); background:rgba(251,191,36,.1)}
+.dock button.end{color:var(--app-bad); border-color:rgba(248,113,113,.5); background:rgba(248,113,113,.1)}
+
+/* part rail */
+.parts{display:flex; gap:.3rem; flex:none}
+.parts span{
+  flex:1; text-align:center; font-size:.66rem; font-weight:650; padding:.34rem 0;
+  border-radius:.5rem; background:rgba(148,163,184,.08); color:var(--app-faint);
+  border:1px solid var(--app-line);
+}
+.parts span.done{color:var(--app-ok); border-color:rgba(52,211,153,.35); background:rgba(52,211,153,.1)}
+.parts span.now{color:var(--app-acc); border-color:rgba(56,189,248,.55); background:rgba(56,189,248,.15)}
+
+/* question list */
+.q{
+  display:flex; gap:.6rem; align-items:flex-start; padding:.65rem .7rem;
+  background:var(--app-surface); border:1px solid var(--app-line); border-radius:.8rem;
+}
+.q.asked{opacity:.5}
+.q b{
+  flex:none; width:1.5rem; height:1.5rem; border-radius:50%; display:grid; place-items:center;
+  font-size:.68rem; background:rgba(56,189,248,.14); color:var(--app-acc);
+  border:1px solid rgba(56,189,248,.4);
+}
+.q.asked b{background:rgba(52,211,153,.14); color:var(--app-ok); border-color:rgba(52,211,153,.45)}
+.q p{font-size:.82rem; line-height:1.4; margin:0}
+
+/* cue card */
+.cue{
+  border:1px solid rgba(56,189,248,.45); border-radius:.95rem; padding:.8rem .85rem;
+  background:linear-gradient(160deg,rgba(56,189,248,.12),rgba(129,140,248,.08) 60%,rgba(19,28,43,.9));
+  display:flex; flex-direction:column; gap:.4rem; flex:none;
+}
+.cue h3{font-size:1.02rem; font-weight:750; letter-spacing:-.02em; line-height:1.28; margin:0}
+.cue .lead{font-size:.74rem; color:var(--app-dim); margin:0}
+.cue ul{margin:0; padding-left:1rem; display:flex; flex-direction:column; gap:.24rem}
+.cue li{font-size:.78rem; line-height:1.35}
+
+/* timer */
+.ring{position:relative; display:grid; place-items:center; width:6.4rem; height:6.4rem; flex:none}
+.ring svg{grid-area:1/1; transform:rotate(-90deg)}
+.ring .t{
+  grid-area:1/1; font-size:1.4rem; font-weight:700; font-variant-numeric:tabular-nums;
+  letter-spacing:-.02em;
+}
+.ring .l{
+  grid-area:1/1; align-self:end; margin-bottom:.85rem;
+  font-size:.58rem; letter-spacing:.1em; text-transform:uppercase; color:var(--app-dim);
+}
+.ring.urgent .t{color:var(--app-bad)}
+.ring.wide{width:9.5rem; height:9.5rem}
+.ring.wide .t{font-size:2.1rem}
+.ring.wide .l{margin-bottom:1.4rem}
+
+/* scratchpad */
+.pad{
+  flex:1; min-height:5rem; border-radius:.8rem; padding:.6rem .7rem;
+  background:var(--app-surface); border:1px solid var(--app-line);
+  font-family:ui-monospace,Consolas,monospace; font-size:.75rem; line-height:1.55;
+  color:var(--app-dim); white-space:pre-wrap; overflow:hidden;
+}
+.pad b{color:var(--app-text); font-weight:500}
+
+/* code */
+.code{
+  font-family:ui-monospace,Consolas,monospace; font-weight:600;
+  font-size:1.9rem; letter-spacing:.26em; color:var(--app-acc);
+  text-indent:.26em; text-align:center; font-variant-numeric:tabular-nums;
+}
+.code.sm{font-size:1.15rem; letter-spacing:.18em; text-indent:.18em}
+
+/* misc */
+.kv{display:flex; justify-content:space-between; gap:.6rem; font-size:.74rem}
+.kv span{color:var(--app-faint)}
+.kv b{font-weight:600}
+.check{display:flex; align-items:center; gap:.45rem; font-size:.76rem}
+.check i{
+  width:1.05rem; height:1.05rem; border-radius:50%; display:grid; place-items:center;
+  font-size:.6rem; flex:none; font-style:normal;
+}
+.check i.y{background:rgba(52,211,153,.16); color:var(--app-ok); border:1px solid rgba(52,211,153,.45)}
+.check i.n{background:rgba(148,163,184,.1); color:var(--app-faint); border:1px solid var(--app-line-2)}
+.pulse{
+  width:.55rem; height:.55rem; border-radius:50%; background:var(--app-acc);
+  box-shadow:0 0 0 0 rgba(56,189,248,.5); animation:pulse 1.9s ease-out infinite; flex:none;
+}
+@keyframes pulse{to{box-shadow:0 0 0 .85rem rgba(56,189,248,0)}}
+.spin{
+  width:.85rem; height:.85rem; border-radius:50%; flex:none;
+  border:2px solid rgba(56,189,248,.25); border-top-color:var(--app-acc);
+  animation:sp .8s linear infinite;
+}
+@keyframes sp{to{transform:rotate(360deg)}}
+/* mock native permission sheet */
+.sheet{
+  border-radius:1rem; background:#f4f6fa; color:#0d1420;
+  padding:.75rem .8rem; display:flex; flex-direction:column; gap:.5rem;
+  box-shadow:0 18px 40px rgba(0,0,0,.5); font-size:.75rem; line-height:1.4;
+}
+.sheet b{font-size:.8rem; display:block}
+.sheet .btns{display:flex; gap:.4rem; justify-content:flex-end; margin-top:.15rem}
+.sheet .btns span{
+  font-size:.74rem; font-weight:600; color:#2f6fd0; padding:.28rem .5rem; border-radius:.4rem;
+}
+.sheet .btns span:last-child{background:#2f6fd0; color:#fff}
+/* band picker */
+.bands{display:grid; grid-template-columns:repeat(4,1fr); gap:.3rem}
+.bands span{
+  text-align:center; font-size:.76rem; font-weight:600; padding:.5rem 0;
+  border-radius:.55rem; background:rgba(148,163,184,.08);
+  border:1px solid var(--app-line); font-variant-numeric:tabular-nums;
+}
+.bands span.on{background:rgba(56,189,248,.16); border-color:rgba(56,189,248,.6); color:var(--app-acc)}
+.bandhero{
+  display:flex; align-items:baseline; gap:.5rem; justify-content:center; padding:.2rem 0;
+}
+.bandhero b{
+  font-size:2.5rem; font-weight:800; letter-spacing:-.04em; line-height:1;
+  background:linear-gradient(135deg,var(--app-acc),var(--app-mag));
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.bandhero span{font-size:.7rem; color:var(--app-faint)}
+
+/* code entry slots */
+.slots{display:flex; gap:.32rem; justify-content:center}
+.slots span{
+  flex:1; aspect-ratio:3/4; display:grid; place-items:center;
+  font-family:ui-monospace,Consolas,monospace; font-size:1.1rem; font-weight:600;
+  background:var(--app-surface); border:1px solid var(--app-line-2); border-radius:.6rem;
+}
+.slots span.filled{border-color:rgba(56,189,248,.6); color:var(--app-acc)}
+.slots span.caret{border-color:var(--app-acc); box-shadow:0 0 0 3px rgba(56,189,248,.18)}
+/* appbar avatar + progress */
+.avatar{
+  width:1.75rem; height:1.75rem; border-radius:50%; flex:none; display:grid; place-items:center;
+  font-size:.72rem; font-weight:700; color:#04121e;
+  background:linear-gradient(135deg,var(--app-acc),var(--app-acc-2));
+}
+.bar{height:.22rem; border-radius:999px; background:rgba(148,163,184,.16); overflow:hidden; flex:none}
+.bar i{display:block; height:100%; background:linear-gradient(90deg,var(--app-acc),var(--app-acc-2))}
+/* inline notification */
+.notif{
+  display:flex; gap:.5rem; align-items:flex-start; border-radius:.7rem; padding:.55rem .65rem;
+  font-size:.75rem; line-height:1.4; border:1px solid;
+}
+.notif.info{color:var(--app-acc); background:rgba(56,189,248,.1); border-color:rgba(56,189,248,.4)}
+.notif.warn{color:var(--app-warn); background:rgba(251,191,36,.1); border-color:rgba(251,191,36,.42)}
+.notif.bad{color:var(--app-bad); background:rgba(248,113,113,.1); border-color:rgba(248,113,113,.42)}
+.notif.ok{color:var(--app-ok); background:rgba(52,211,153,.1); border-color:rgba(52,211,153,.42)}
+.notif b{font-weight:650}
+/* segmented control */
+.seg{display:flex; gap:.25rem; padding:.22rem; border-radius:.7rem; background:rgba(148,163,184,.1); border:1px solid var(--app-line)}
+.seg span{flex:1; text-align:center; font-size:.72rem; font-weight:600; padding:.4rem 0; border-radius:.5rem; color:var(--app-dim)}
+.seg span.on{background:var(--app-acc); color:#04121e}
+/* countdown strip (persistent timer under the video) */
+.strip{
+  display:flex; align-items:center; gap:.5rem; padding:.45rem .6rem; border-radius:.6rem;
+  background:rgba(52,211,153,.12); border:1px solid rgba(52,211,153,.4);
+  font-size:.74rem; font-weight:600; color:var(--app-ok); flex:none;
+}
+.strip.hot{background:rgba(248,113,113,.12); border-color:rgba(248,113,113,.45); color:var(--app-bad)}
+.strip .t{margin-left:auto; font-variant-numeric:tabular-nums; font-weight:700}
+/* score pill */
+.score{
+  font-variant-numeric:tabular-nums; font-weight:700; color:var(--app-acc);
+  background:rgba(56,189,248,.12); border:1px solid rgba(56,189,248,.4);
+  border-radius:999px; padding:.1rem .5rem; font-size:.78rem;
+}
+
+/* ── Annotation column ──────────────────────────────────────── */
+.notes{display:flex; flex-direction:column; gap:1.15rem; min-width:0}
+.note{display:flex; flex-direction:column; gap:.3rem}
+.note h4{
+  font-family:var(--mono); font-size:.68rem; font-weight:600;
+  letter-spacing:.11em; text-transform:uppercase; color:var(--ink-3);
+  display:flex; align-items:center; gap:.4rem;
+}
+.note h4 .dot{width:7px; height:7px; margin:0}
+.note h4 .dot.live{color:var(--ok)} .note h4 .dot.change{color:var(--warn)}
+.note h4 .dot.new{color:var(--new)} .note h4 .dot.tension{color:var(--acc)}
+.note p{font-size:.875rem; line-height:1.58; color:var(--ink-2)}
+.note p b{color:var(--ink); font-weight:600}
+.note code{
+  font-family:var(--mono); font-size:.76rem; color:var(--ink);
+  background:var(--paper-2); border-radius:4px; padding:.08rem .3rem;
+}
+.src{
+  font-family:var(--mono); font-size:.7rem; color:var(--ink-3);
+  border-top:1px dashed var(--line-2); padding-top:.45rem; margin-top:.15rem;
+  word-break:break-all;
+}
+.specs{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:.4rem}
+.specs li{
+  display:grid; grid-template-columns:minmax(0,7.5rem) minmax(0,1fr);
+  gap:.6rem; font-size:.8rem; align-items:baseline;
+  padding-bottom:.4rem; border-bottom:1px solid var(--line);
+}
+.specs li:last-child{border-bottom:none; padding-bottom:0}
+.specs b{
+  font-family:var(--mono); font-size:.68rem; font-weight:600; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--ink-3);
+}
+.specs span{color:var(--ink-2); line-height:1.5; min-width:0}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width:1080px){
+  .stop{grid-template-columns:minmax(0,150px) minmax(0,1fr); }
+  .rail{grid-column:1}
+  .device{grid-column:2}
+  .notes{grid-column:1 / -1; display:grid; grid-template-columns:repeat(auto-fit,minmax(15rem,1fr)); gap:1.4rem}
+  .rail{position:static}
+}
+@media (max-width:760px){
+  .stop{grid-template-columns:1fr}
+  .rail,.device,.notes{grid-column:1}
+  .notes{grid-template-columns:1fr}
+  .ph{height:auto; max-height:none; min-height:38rem; font-size:.86rem}
+  .phone{width:100%; border-radius:2.2rem; padding:.45rem}
+  .phone::after{top:1.1rem; height:.9rem; width:4rem}
+  .ph{border-radius:1.9rem}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms !important; transition-duration:.001ms !important}
+}
+</style>
+
+<div class="wrap">
+
+<header class="masthead">
+  <div class="eyebrow">UI/UX specification · mobile · revision A</div>
+  <h1>The whole exam, held in one hand</h1>
+  <p class="deck">
+    A phone-first pass over every screen in IELTS Speaking Partner. Ten stops from first
+    launch to the score summary, each one drawn at 390 × 844 and marked against the code
+    that already ships: what to keep, what to change, what to add.
+  </p>
+  <div class="meta">
+    <span><b>Target</b> 390 × 844 CSS px · iOS &amp; Android</span>
+    <span><b>Direction</b> dark-first, as the app already is</span>
+    <span><b>Scope</b> all 13 screens · 4 routes</span>
+    <span><b>Base</b> <code>client/src</code> @ 43e92dd</span>
+  </div>
+</header>
+
+<div class="legend">
+  <div class="legend-item"><span class="dot live"></span><p><b>Keep.</b> Already right in the shipped CSS. Named so it doesn't get redesigned away.</p></div>
+  <div class="legend-item"><span class="dot change"></span><p><b>Change.</b> Works on a laptop, fights a thumb. Specific fix given.</p></div>
+  <div class="legend-item"><span class="dot new"></span><p><b>New.</b> Nothing in the app does this yet.</p></div>
+  <div class="legend-item"><span class="dot tension"></span><p><b>Tension.</b> A trade-off worth arguing about before it gets built.</p></div>
+</div>
+
+<!-- ═══════════════ 01 ═══════════════ -->
+<section class="stop">
+  <div class="rail">
+    <div class="rail-no">01<span> /10</span></div>
+    <h3>First launch</h3>
+    <span class="route">/</span>
+    <p class="when">NicknameGate. The only screen a new user ever sees alone.</p>
+  </div>
+
+  <div class="device" data-device>
+    <div class="picker" role="group" aria-label="First launch states">
+      <button type="button" aria-pressed="true" data-screen="default">Default</button>
+      <button type="button" data-screen="error">Name taken</button>
+    </div>
+    <div class="phone">
+      <div class="ph">
+        <div class="screen on" data-scr="default">
+          <div class="statusbar"><span>9:41</span><span>▮▮▮ ⌁</span></div>
+          <div class="body" style="justify-content:center; gap:1.15rem">
+            <div style="display:flex; flex-direction:column; align-items:center; gap:.7rem; text-align:center">
+              <div class="mark" style="width:3.4rem; height:3.4rem; border-radius:1.15rem; font-size:1.5rem">🎤</div>
+              <h4 class="ph-h" style="font-size:1.3rem">Practice IELTS Speaking</h4>
+              <p class="ph-sub" style="max-width:24ch">
+                One-to-one video, the real three parts, and a band out of 9. No password — just a name.
+              </p>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:.5rem">
+              <label class="ph-fine" for="m01">Display name</label>
+              <div class="box" style="padding:.15rem .1rem; border-radius:.8rem">
+                <input id="m01" value="Sohag" readonly
+                  style="background:none; border:none; color:var(--app-text); font:inherit; font-size:.95rem; padding:.5rem .7rem; width:100%; outline:none">
+              </div>
+              <p class="ph-fine">2–24 characters. Shows next to your scores.</p>
+            </div>
+            <button type="button" class="cta">Start practising →</button>
+            <p class="ph-fine" style="text-align:center">
+              You'll be asked for camera and microphone access before your first match.
+            </p>
+          </div>
+        </div>
+        <div class="screen" data-scr="error">
+          <div class="statusbar"><span>9:41</span><span>▮▮▮ ⌁</span></div>
+          <div class="body" style="justify-content:center; gap:1.15rem">
+            <div style="display:flex; flex-direction:column; align-items:center; gap:.7rem; text-align:center">
+              <div class="mark" style="width:3.4rem; height:3.4rem; border-radius:1.15rem; font-size:1.5rem">🎤</div>
+              <h4 class="ph-h" style="font-size:1.3rem">Practice IELTS Speaking</h4>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:.5rem">
+              <label class="ph-fine" for="m01b">Display name</label>
+              <div class="box" style="padding:.15rem .1rem; border-radius:.8rem; border-color:rgba(248,113,113,.5)">
+                <input id="m01b" value="Examiner" readonly
+                  style="background:none; border:none; color:var(--app-text); font:inherit; font-size:.95rem; padding:.5rem .7rem; width:100%; outline:none">
+              </div>
+              <div class="notif bad">
+                <span>⚠</span>
+                <span>That name is already in use on this device. Pick a different one — your scores stay attached to whichever name you pick.</span>
+              </div>
+            </div>
+            <button type="button" class="cta">Start practising →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <div class="note">
+      <h4><span class="dot live"></span>Keep</h4>
+      <p>The centred badge-and-headline shape works on a phone and needs no hero image. The
+      "no password needed" line is doing real work — it is why someone taps at all.</p>
+      <div class="src">NicknameGate.tsx · .auth-card</div>
+    </div>
+    <div class="note">
+      <h4><span class="dot change"></span>Change</h4>
+      <p>Drop <code>autoFocus</code>. On Android it throws the keyboard up before the user has
+      read the headline, and the card jumps. Let them tap the field.</p>
+      <div class="src">NicknameGate.tsx:41 — autoFocus</div>
+    </div>
+    <div class="note">
+      <h4><span class="dot new"></span>New</h4>
+      <p>Name the camera request before the browser does: one line under the button, so the
+      OS sheet that arrives seconds later is expected rather than ambushing. Permission
+      refusal is the single biggest drop-off point in this flow.</p>
+    </div>
+    <div class="note">
+      <h4><span class="dot tension"></span>Tension</h4>
+      <p>Mic and camera are one grant here. A quiet practice mode — listen to the examiner,
+      answer aloud, no camera — would suit people on a bus, but it changes what the peer
+      sees. Worth deciding before it is half-built.</p>
+    </div>
+    <ul class="specs">
+      <li><b>Input</b><span>1 field, 2–24 chars, <code>inputmode="text"</code>, no autocorrect on the name field</span></li>
+      <li><b>CTA</b><span>full width, 49px min height, above the fold at 844px with keyboard closed</span></li>
+      <li><b>States</b><span>idle · submitting · name rejected · server unreachable</span></li>
+    </ul>
+  </div>
+</section>
+
+<!-- ═══════════════ 02 ═══════════════ -->
+<section class="stop">
+  <div class="rail">
+    <div class="rail-no">02<span> /10</span></div>
+    <h3>Lobby</h3>
+    <span class="route">/</span>
+    <p class="when">HomePage + LobbyPanel. Three ways into a match, plus the profile door.</p>
+  </div>
+
+  <div class="device" data-device>
+    <div class="picker" role="group" aria-label="Lobby states">
+      <button type="button" aria-pressed="true" data-screen="idle">Three ways in</button>
+      <button type="button" data-screen="queue">Searching</button>
+      <button type="button" data-screen="code">Code room</button>
+    </div>
+    <div class="phone">
+      <div class="ph">
+        <div class="screen on" data-scr="idle">
+          <div class="statusbar"><span>9:41</span><span>▮▮▮ ⌁</span></div>
+          <div class="appbar">
+            <span class="avatar">S</span>
+            <span class="brand">Evening, Sohag</span>
+            <span class="grow"></span>
+            <span class="conn"><i></i>online</span>
+          </div>
+          <div class="body scroll">
+            <button type="button" class="cta" style="min-height:4.6rem; flex-direction:column; gap:.15rem; align-items:flex-start; padding:.8rem 1rem">
+              <span style="font-size:1rem">Find a partner</span>
+              <span style="font-size:.7rem; font-weight:500; opacity:.85">Random match · be examining in about a minute</span>
+            </button>
+            <div class="pair">
+              <button type="button" class="tap" style="min-height:3.4rem">
+                <strong>Create a room</strong><span>Share a 6-letter code</span>
+              </button>
+              <button type="button" class="tap" style="min-height:3.4rem">
+                <strong>Join a room</strong><span>Enter a friend's code</span>
+              </button>
+            </div>
+            <div class="box flat" style="gap:.5rem; margin-top:.2rem">
+              <span class="ph-fine" style="letter-spacing:.1em; text-transform:uppercase; font-weight:600">Before you start</span>
+              <span class="check"><i class="y">✓</i> Camera &amp; microphone — asked at match time</span>
+              <span class="check"><i class="n">2</i> Quiet room, phone on a stand</span>
+              <span class="check"><i class="n">3</i> Paper and pen for Part 2 notes</span>
+            </div>
+            <div class="box flat" style="gap:.55rem">
+              <div class="row between">
+                <span class="ph-fine" style="letter-spacing:.1em; text-transform:uppercase; font-weight:600">Your record</span>
+                <span class="ph-fine" style="color:var(--app-acc)">Profile →</span>
+              </div>
+              <div class="row" style="gap:1.4rem">
+                <span><b style="font-size:1.5rem; letter-spacing:-.03em">6</b> <span class="ph-fine">tests</span></span>
+                <span><b style="font-size:1.5rem; letter-spacing:-.03em; color:var(--app-acc)">6.8</b> <span class="ph-fine">average</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="screen" data-scr="queue">
+          <div class="statusbar"><span>9:41</span><span>▮▮▮ ⌁</span></div>
+          <div class="appbar">
+            <span class="avatar">S</span>
+            <span class="brand">Finding a partner</span>
+            <span class="grow"></span>
+            <span class="conn"><i></i>online</span>
+          </div>
+          <div class="body" style="justify-content:center; gap:1.3rem; text-align:center">
+            <div style="display:flex; flex-direction:column; align-items:center; gap:.8rem">
+              <div class="ring" style="width:8rem; height:8rem">
+                <svg viewBox="0 0 100 100" width="128" height="128" aria-hidden="true">
+                  <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(148,163,184,.22)" stroke-width="6"></circle>
+                  <circle cx="50" cy="50" r="44" fill="none" stroke="#38bdf8" stroke-width="6"
+                          stroke-linecap="round" stroke-dasharray="276" stroke-dashoffset="96"></circle>
+                </svg>
+                <div class="t" style="font-size:1.05rem; letter-spacing:0">0:41</div>
+                <div class="l">waiting</div>
+              </div>
+              <h4 class="ph-h">Looking for someone at your level</h4>
+              <p class="ph-sub" style="max-width:26ch">
+                Whoever joins second takes the examiner's chair for round 1. Keep the app open.
+              </p>
+            </div>
+            <div class="box flat" style="gap:.4rem; text-align:left">
+              <span class="ph-fine">Most people are matched inside 60 seconds.</span>
+              <span class="ph-fine">Nobody waiting? A room code is the faster route.</span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:.5rem">
+              <button type="button" class="cta ghost">Use a room code instead</button>
+              <button type="button" class="cta ghost">Cancel search</button>
+            </div>
+          </div>
+        </div>
+        <div class="screen" data-scr="code">
+          <div class="statusbar"><span>9:41</span><span>▮▮▮ ⌁</span></div>
+          <div class="appbar">
+            <span class="iconbtn">←</span>
+            <span class="brand">Room code</span>
+          </div>
+          <div class="body" style="gap:1rem">
+            <div class="box flat" style="gap:.65rem; text-align:center; padding:1.1rem .8rem">
+              <span class="ph-fine">Read this out, or send it</span>
+              <div class="code">K7M4QP</div>
+              <div class="row" style="justify-content:center; gap:.5rem">
+                <button type="button" class="cta ghost sm" style="width:auto; padding-inline:1rem">⧉ Copy code</button>
+                <button type="button" class="cta ghost sm" style="width:auto; padding-inline:1rem">↗ Share</button>
+              </div>
+            </div>
+            <div class="row" style="gap:.5rem">
+              <span class="pulse"></span>
+              <span class="ph-sub">Waiting for your friend to join…</span>
+            </div>
+            <div class="box flat" style="gap:.35rem">
+              <span class="ph-fine" style="letter-spacing:.1em; text-transform:uppercase; font-weight:600">Or enter a code they sent you</span>
+              <div class="slots">
+                <span class="filled">R</span><span class="filled">9</span><span class="caret"></span>
+                <span></span><span></span><span></span>
+              </div>
+              <span class="ph-fine">Code entry opens the keyboard straight into letters.</span>
+            </div>
+            <button type="button" class="cta ghost">Cancel room</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <div class="note">
+      <h4><span class="dot live"></span>Keep</h4>
+      <p>The dark card stack, the gradient primary button, the <code>.room-code</code> letterspacing.
+      All of it survives the move to a phone untouched.</p>
+      <div class="src">LobbyPanel.tsx · global.css:434–467</div>
+    </div>
+    <div class="note">
+      <h4><span class="dot change"></span>Change</h4>
+      <p>The three lobby actions currently carry equal weight in a wrapping flex row, so they
+      stack into a column of same-looking buttons that fills the screen. Promote one to a
+      full-width primary and demote the other two to a two-up pair. The user's real intent —
+      find someone — should be the thing their thumb lands on.</p>
+      <div class="src">LobbyPanel.tsx:108–133 · .lobby-actions</div>
+    </div>
+    <div class="note">
+      <h4><span class="dot new"></span>New</h4>
+      <p>Room codes get a Copy button. Six characters from a 31-letter alphabet tuned against
+      ambiguous glyphs is a well-built code, then the UI makes people read it aloud over the
+      call they are trying to set up.</p>
+      <div class="src">server/src/util/code.ts — ALPHABET excludes O/0, I/1/L</div>
+    </div>
+    <div class="note">
+      <h4><span class="dot new"></span>New</h4>
+      <p>Put tests taken and average band on the lobby itself. The number people are here to
+      move is currently one navigation away, which is one navigation too many.</p>
+    </div>
+    <ul class="specs">
+      <li><b>Touch</b><span>every control ≥ 44px; the pair split gives each ≥ 48px</span></li>
+      <li><b>Queue</b><span>a timer that counts up, not down — nobody knows how long a wait is normal</span></li>
+      <li><b>Recovery</b><span>at 90s offer the room code without making them cancel first</span></li>
+    </ul>
+  </div>
+</section>
+
+<!-- ═══════════════ 03 ═══════════════ -->
+<section class="stop">
+  <div class="rail">
+    <div class="rail-no">03<span> /10</span></div>
+    <h3>Round lobby</h3>
+    <span class="route">/room/:matchId</span>
+    <p class="when">ReadyGate. Both players are in; the camera request is airborne.</p>
+  </div>
+
+  <div class="device" data-device>
+    <div class="picker" role="group" aria-label="Round lobby states">
+      <button type="button" aria-pressed="true" data-screen="auto">Auto-confirming</button>
+      <button type="button" data-screen="denied">Camera denied</button>
+      <button type="button" data-screen="waiting">You're ready</button>
+    </div>
+    <div class="phone">
+      <div class="ph">
+        <div class="screen on" data-scr="auto">
+          <div class="statusbar"><span>9:41</span><span>▮▮▮ ⌁</span></div>
+          <div class="appbar">
+            <span class="tag ex">Examiner</span>
+            <span class="grow"></span>
+            <span class="ph-fine">Round 1 of 2</span>
+          </div>
+          <div class="body" style="gap:.8rem">
+            <div class="stage" style="aspect-ratio:16/10">
+              <div class="faces"><b>R</b><span>Rafi's camera</span></div>
+              <div class="pip">you</div>
+              <span class="vlabel">Rafi</span>
+            </div>
+            <div class="box flat" style="gap:.5rem">
+              <div class="row"><span class="spin"></span><span class="ph-sub" style="color:var(--app-text); font-weight:600">Setting up your camera…</span></div>
+              <p class="ph-fine">Your browser is about to ask for camera and microphone. Choose <b style="color:var(--app-text)">Allow</b> — this is the only time it asks.</p>
+            </div>
+            <div class="sheet">
+              <b>“localhost” Would Like to Access the Camera and Microphone</b>
+              <span>Neither this call nor your scores are recorded.</span>
+              <div class="btns"><span>Don't Allow</span><span>Allow</span></div>
+            </div>
+            <div class="box flat" style="gap:.4rem">
+              <div class="kv"><span>Topic set</span><b>Hometown</b></div>
+              <div class="kv"><span>Part 1 questions</span><b>3</b></div>
+              <div class="kv"><span>You are</span><b style="color:var(--app-acc)">Examiner this round</b></div>
+            </div>
+          </div>
+        </div>
+        <div class="screen" data-scr="denied">
+          <div class="statusbar"><span>9:41</span><span>▮▮▮ ⌁</span></div>
+          <div class="appbar">
+            <span class="tag ex">Examiner</span>
+            <span class="grow"></span>
+            <span class="ph-fine">Round 1 of 2</span>
+          </div>
+          <div class="body" style="gap:.8rem">
+            <div class="stage" style="aspect-ratio:16/10">
+              <div class="faces"><b>R</b><span>Rafi is ready</span></div>
+              <span class="vlabel">Rafi</span>
+            </div>
+            <div class="notif bad">
+              <span>⚠</span>
+              <span><b>Camera and microphone are blocked.</b> Tap the padlock in your address bar, set both to Allow, then reload this page.</span>
+            </div>
+            <div class="box flat" style="gap:.4rem">
+              <span class="ph-fine">Rafi can see and hear you only if you continue with a camera. Without one, they see an avatar and can still hear you.</span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:.5rem; margin-top:auto">
+              <button type="button" class="cta">Try camera again</button>
+              <button type="button" class="cta ghost">Continue without a camera</button>
+            </div>
+          </div>
+        </div>
+        <div class="screen" data-scr="waiting">
+          <div class="statusbar"><span>9:41</span><span>▮▮▮ ⌁</span></div>
+          <div class="appbar">
+            <span class="tag ex">Examiner</span>
+            <span class="grow"></span>
+            <span class="ph-fine">Round 1 of 2</span>
+          </div>
+          <div class="body" style="gap:.8rem">
+            <div class="stage" style="aspect-ratio:16/10">
+              <div class="faces"><b>R</b><span>Rafi's camera</span></div>
+              <div class="pip">you</div>
+              <span class="vlabel">Rafi</span>
+            </div>
+            <div class="notif ok"><span>✓</span><span>You're ready. Waiting for <b>Rafi</b> to allow their camera.</span></div>
+            <div class="box flat" style="gap:.45rem">
+              <span class="ph-fine" style="letter-spacing:.1em; text-transform:uppercase; font-weight:600">While you wait</span>
+              <span class="ph-fine">You're the examiner for round 1. The interview opens with Part 1 — three short questions, one at a time.</span>
+            </div>
+            <div class="box flat" style="gap:.4rem">
+              <div class="kv"><span>Topic set</span><b>Hometown</b></div>
+              <div class="kv"><span>Cue cards</span><b>3 to choose from</b></div>
+            </div>
+            <div class="row" style="gap:.5rem; margin-top:auto">
+              <button type="button" class="cta ghost">🔇 Mic on</button>
+              <button type="button" class="cta ghost">📷 Cam on</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <div class="note">
+      <h4><span class="dot live"></span>Keep</h4>
+      <p>Auto-confirming readiness is the best decision in the app. The happy path needs zero
+      taps, and the fallback buttons only surface on failure. Do not "fix" this into an
+      explicit Ready button.</p>
+      <div class="src">ReadyGate.tsx:44–54 — auto-ready effect</div>
+    </div>
+    <div class="note">
+      <h4><span class="dot change"></span>Change</h4>
+      <p>Prime the permission sheet <em>before</em> it appears. The copy exists
+      ("Allow camera &amp; microphone access when your browser asks…") but it currently sits
+      in the small muted line where nobody reads it while a system dialog is stealing focus.
+      Make it the loudest thing in the panel for those few seconds.</p>
+      <div class="src">ReadyGate.tsx:96–102 · .ready-status</div>
+    </div>
+    <div class="note">
+      <h4><span class="dot new"></span>New</h4>
+      <p>Show the video stage here instead of a bare card. It is the same <code>VideoStage</code>
+      component that renders moments later, so this costs nothing and turns a text interstitial
+      into proof that the room is real and the peer is present.</p>
+    </div>
+    <div class="note">
+      <h4><span class="dot tension"></span>Tension</h4>
+      <p>"Continue without camera" quietly makes the other person's exam worse — they are
+      practising a speaking test against an avatar. Keep the escape hatch, but say what it
+      costs, as the middle frame does.</p>
+    </div>
+    <ul class="specs">
+      <li><b>Timing</b><span>if the peer hasn't confirmed in 15s, float "Nudge Rafi" — silence is the main drop-off here</span></li>
+      <li><b>Denied</b><span>name the actual recovery path (padlock → Allow → reload), not "allow access in your browser"</span></li>
+      <li><b>Layout</b><span>this is the last screen before the sticky video pins; keep it shorter than the viewport</span></li>
+    </ul>
+  </div>
+</section>
+
+<!-- ═══════════════ 04 ═══════════════ -->
+<section class="stop">
+  <div class="rail">
+    <div class="rail-no">04<span> /10</span></div>
+    <h3>Part 1, as examiner</h3>
+    <span class="route">/room/:matchId</span>
+    <p class="when">ExaminerPanel, part 1. Video pinned, question list scrolling beneath it.</p>
+  </div>
+
+  <div class="device" data-device>
+    <div class="picker" role="group" aria-label="Part 1 states">
+      <button type="button" aria-pressed="true" data-screen="ask">Asking</button>
+      <button type="button" data-screen="followupSent">Follow-up sent</button>
+    </div>
+    <div class="phone">
+      <div class="ph">
+        <div class="screen on" data-scr="ask">
+          <div class="statusbar"><span>9:41</span><span>▮▮▮ ⌁</span></div>
+          <div class="appbar">
+            <span class="tag ex">Examiner</span>
+            <span class="grow"></span>
+            <span class="ph-fine truncate" style="max-width:8rem">with Rafi</span>
+            <button type="button" class="iconbtn" title="Leave match" style="font-size:.6rem">✕</button>
+          </div>
+          <div class="body" style="gap:.6rem">
+            <div class="stage" style="aspect-ratio:16/9">
+              <div class="faces"><b>R</b><span>Rafi</span></div>
+              <div class="pip">you</div>
+              <span class="vlabel">Rafi</span>
+              <span class="vbadge"><span>🔇 mic off</span></span>
+            </div>
+            <div class="dock">
+              <button type="button" title="Microphone">🎤</button>
+              <button type="button" class="off" title="Camera">📵</button>
+              <button type="button" title="Notes">📝</button>
+              <button type="button" class="end" title="Leave">✕</button>
+            </div>
+            <div class="parts">
+              <span class="now">Part 1</span><span>Part 2</span><span>Part 3</span><span>Score</span>
+            </div>
+            <div class="deck">
+              <div class="row between" style="padding:0 .15rem">
+                <span class="ph-fine" style="letter-spacing:.1em; text-transform:uppercase; font-weight:600">Hometown · 3 questions</span>
+                <span class="ph-fine">1 of 3</span>
+              </div>
+              <div class="q">
+                <b>1</b>
+                <p>Where do you live now? Do you live in a house or a flat?</p>
+              </div>
+              <div class="q asked"><b>✓</b><p>What do you like most about your hometown?</p></div>
+              <div class="q asked"><b>✓</b><p>How often do you visit the places where you grew up?</p></div>
+              <div class="box flat" style="gap:.4rem">
+                <span class="ph-fine">Ask 2–3 of these, then move on. Don't let Part 1 run past about five minutes — Part 2 is where the band is decided.</span>
+              </div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:.5rem; flex:none">
+              <button type="button" class="cta">Part 2 — choose a cue card →</button>
+              <button type="button" class="cta ghost sm">Ask your own question</button>
+            </div>
+          </div>
+        </div>
+        <div class="screen" data-scr="followupSent">
+          <div class="statusbar"><span>9:41</span><span>▮▮▮ ⌁</span></div>
+          <div class="appbar">
+            <span class="tag ex">Examiner</span>
+            <span class="grow"></span>
+            <span class="ph-fine truncate" style="max-width:8rem">with Rafi</span>
+            <button type="button" class="iconbtn" style="font-size:.6rem">✕</button>
+          </div>
+          <div class="body" style="gap:.6rem">
+            <div class="stage thin"><span class="vlabel" style="bottom:.5rem">Rafi · mic off</span></div>
+            <div class="dock" style="transform:scale(.86)">
+              <button type="button">🎤</button><button type="button" class="off">📵</button>
+              <button type="button">📝</button><button type="button" class="end">✕</button>
+            </div>
+            <div class="parts"><span class="now">Part 1</span><span>Part 2</span><span>Part 3</span><span>Score</span></div>
+            <div class="notif" style="color:var(--app-mag); background:rgba(129,140,248,.1); border-color:rgba(129,140,248,.42)">
+              <span>💬</span>
+              <span><b>Now on Rafi's screen:</b> “Do you still keep in touch with the people you grew up with?”</span>
+            </div>
+            <div class="deck">
+              <div class="q asked"><b>✓</b><p>Where do you live now? Do you live in a house or a flat?</p></div>
+              <div class="q"><b>2</b><p>What do you like most about your hometown?</p></div>
+              <div class="q"><b>3</b><p>How often do you visit the places where you grew up?</p></div>
+            </div>
+            <div class="box flat" style="gap:.5rem; flex:none">
+              <span class="ph-fine" style="letter-spacing:.1em; text-transform:uppercase; font-weight:600">Your own question</span>
+              <div class="box" style="padding:.1rem; border-radius:.7rem">
+                <input value="Do you still keep in touch with the people you grew up with?" readonly
+                  style="background:none; border:none; color:var(--app-text); font:inherit; font-size:.78rem; padding:.45rem .55rem; width:100%; outline:none">
+              </div>
+              <div class="pair">
+                <button type="button" class="cta sm">Send to Rafi</button>
+                <button type="button" class="cta ghost sm">Clear</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <div class="note">
+      <h4><span class="dot live"></span>Keep</h4>
+      <p>The pinned video column is correct and hard-won — the examiner has to keep watching a
+      face while reading questions, and the header already gets out of the way during a match.</p>
+      <div class="src">global.css:1062–1083 · .app-header.in-match</div>
+    </div>
+    <div class="note">
+      <h4><span class="dot change"></span>Change</h4>
+      <p>The current mobile stage eats up to <code>40vh</code>, which on a 390 × 844 phone is
+      most of the screen above a question list that is the actual work surface. On phones the
+      examiner's camera can be a face-strip around 120–150px: enough to read expression, not
+      enough to bury the questions.</p>
+      <div class="src">global.css:1073 — .video-main{max-height:40vh}</div>
+    </div>
+    <div class="note">
+      <h4><span class="dot new"></span>New</h4>
+      <p>A persistent control dock. Mic, camera, notes and leave currently live inside a wrapping
+      chip row under the video, where the two controls used mid-sentence are the smallest targets
+      on the screen. Round buttons at the bottom edge fix that and give the layout a floor.</p>
+    </div>
+    <div class="note">
+      <h4><span class="dot tension"></span>Tension</h4>
+      <p>Restructuring the stage for phones means the examiner and the examinee see different
+      video geometries. That is fine — the roles have different jobs — but it has to be a
+      deliberate split, not drift.</p>
+    </div>
+    <ul class="specs">
+      <li><b>Progress</b><span>the stepper becomes a 4-up Part 1/2/3/Score bar; tick each question as asked, locally</span></li>
+      <li><b>Follow-up</b><span>echo it back in the examiner's own panel — today they can't see what they sent</span></li>
+      <li><b>Targets</b><span>dock buttons 54px; the leave button is deliberately smaller and red</span></li>
+    </ul>
+  </div>
+</section>
+
+<!-- ═══════════════ 05 ═══════════════ -->
+<section class="stop">
+  <div class="rail">
+    <div class="rail-no">05<span> /10</span></div>
+    <h3>Choose a cue card</h3>
+    <span class="route">/room/:matchId</span>
+    <p class="when">ExaminerPanel, the Part 1 → Part 2 handover.</p>
+  </div>
+
+  <div class="device" data-device>
+    <div class="phone">
+      <div class="ph">
+        <div class="screen on">
+          <div class="statusbar"><span>9:41</span><span>▮▮▮ ⌁</span></div>
+          <div class="appbar">
+            <span class="tag ex">Examiner</span>
+            <span class="grow"></span>
+            <span class="ph-fine">Part 2 · pick one</span>
+          </div>
+          <div class="body scroll" style="gap:.6rem">
+            <div class="stage thin"><span class="vlabel" style="bottom:.5rem">Rafi · waiting</span></div>
+            <div class="parts"><span class="done">1 ✓</span><span class="now">Part 2</span><span>Part 3</span><span>Score</span></div>
+            <p class="ph-sub" style="padding:0 .15rem">
+              Rafi sees the card you pick for one minute of preparation, then it disappears and they speak for two.
+            </p>
+            <div class="box" style="gap:.45rem; border-color:rgba(56,189,248,.45)">
+              <div class="row between">
+                <span class="tag p">Card 1</span>
+                <span class="ph-fine">most picked</span>
+              </div>
+              <p style="font-size:.85rem; font-weight:600; line-height:1.35; margin:0">
+                Describe a place in your hometown you like to visit
+              </p>
+              <p class="ph-fine">where it is · how often you go · who with · why you like it</p>
+              <button type="button" class="cta sm">Send this card to Rafi</button>
+            </div>
+            <div class="box" style="gap:.45rem">
+              <div class="row between">
+                <span class="tag p">Card 2</span>
+              </div>
+              <p style="font-size:.85rem; font-weight:600; line-height:1.35; margin:0">
+                Describe a building in your hometown that is important to you
+              </p>
+              <p class="ph-fine">what it is · where · what it's used for · why it matters</p>
+              <button type="button" class="cta ghost sm">Send this card to Rafi</button>
+            </div>
+            <div class="box" style="gap:.45rem">
+              <div class="row between">
+                <span class="tag p">Card 3</span>
+              </div>
+              <p style="font-size:.85rem; font-weight:600; line-height:1.35; margin:0">
+                Describe a quiet place in your hometown
+              </p>
+              <p class="ph-fine">where · when you go · what you do · why it's peaceful</p>
+              <button type="button" class="cta ghost sm">Send this card to Rafi</button>
+            </div>
+            <button type="button" class="cta ghost">← Back to Part 1</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <div class="note">
+      <h4><span class="dot live"></span>Keep</h4>
+      <p>Showing the three cards in full, bullets and all, is right. The examiner is choosing on
+      the examinee's behalf and needs to judge difficulty, not just read a title.</p>
+      <div class="src">ExaminerPanel.tsx:92–110 · .card-chooser</div>
+    </div>
+    <div class="note">
+      <h4><span class="dot change"></span>Change</h4>
+      <p>Every card currently carries an identical filled gradient button, so "Start this card"
+      appears three times at equal weight and the actual choice — which card — gets no emphasis.
+      One primary on the first card, ghosts underneath, and the card's bullets compressed to one
+      line so three options fit in a phone scroll instead of three screens.</p>
+      <div class="src">ExaminerPanel.tsx:98–105</div>
+    </div>
+    <div class="note">
+      <h4><span class="dot new"></span>New</h4>
+      <p>Confirm before the card goes out. Tapping the wrong card starts the examinee's timed
+      Part 2 with no undo; a 6-second "Sent — undo" strip makes a mis-tap recoverable.
+      Today the only recovery is living with it.</p>
+    </div>
+    <ul class="specs">
+      <li><b>Content</b><span>prompt + a one-line bullet summary; full bullets stay in the question bank</span></li>
+      <li><b>Ordering</b><span>keep the seeded order; don't invent a difficulty rank the data doesn't have</span></li>
+      <li><b>After send</b><span>the panel switches to the live cue-card view with "Hide card now"</span></li>
+    </ul>
+  </div>
+</section>
+
+<!-- ═══════════════ 06 ═══════════════ -->
+<section class="stop">
+  <div class="rail">
+    <div class="rail-no">06<span> /10</span></div>
+    <h3>Part 2, one minute to think</h3>
+    <span class="route">/room/:matchId</span>
+    <p class="when">ExamineePanel, stage <code>prep</code>. The only screen with a deadline.</p>
+  </div>
+
+  <div class="device" data-device>
+    <div class="picker" role="group" aria-label="Prep states">
+      <button type="button" aria-pressed="true" data-screen="notes">Writing notes</button>
+      <button type="button" data-screen="typing">Keyboard up</button>
+    </div>
+    <div class="phone">
+      <div class="ph">
+        <div class="screen on" data-scr="notes">
+          <div class="statusbar"><span>9:41</span><span>▮▮▮ ⌁</span></div>
+          <div class="appbar">
+            <span class="tag ee">Examinee</span>
+            <span class="grow"></span>
+            <span class="ph-fine">Part 2 · prep</span>
+          </div>
+          <div class="body" style="gap:.6rem">
+            <div class="stage thin">
+              <span class="vlabel" style="bottom:.5rem">Rafi (examiner)</span>
+              <span class="vbadge" style="top:.35rem; right:.4rem"><span>🔇</span></span>
+            </div>
+            <div class="parts"><span class="done">1 ✓</span><span class="now">2 · prep</span><span>3</span><span>Score</span></div>
+            <div class="cue">
+              <div class="row between">
+                <span class="tag solid">Preparation</span>
+                <span class="ph-fine" style="color:var(--app-dim)">1:00</span>
+              </div>
+              <h3>Describe a place in your hometown you like to visit</h3>
+              <p class="lead">You should say:</p>
+              <ul>
+                <li>where it is</li>
+                <li>how often you go there</li>
+                <li>who you usually go with</li>
+                <li>and explain why you like visiting it</li>
+              </ul>
+            </div>
+            <div class="box flat" style="gap:.45rem; flex:1; min-height:0">
+              <div class="row between">
+                <span class="ph-fine" style="letter-spacing:.1em; text-transform:uppercase; font-weight:600">Your notes</span>
+                <span class="ph-fine">🔒 stays on this phone</span>
+              </div>
+              <div class="pad"><b>park by the river</b>
+walk there — 15 min, most weekends
+with my brother
+quiet in the morning, boats</div>
+            </div>
+            <div class="strip">
+              <span>⏱</span><span>Card disappears in</span><span class="t">0:38</span>
+            </div>
+          </div>
+        </div>
+        <div class="screen" data-scr="typing">
+          <div class="statusbar"><span>9:41</span><span>▮▮▮ ⌁</span></div>
+          <div class="appbar">
+            <span class="tag ee">Examinee</span>
+            <span class="grow"></span>
+            <span class="ph-fine">Part 2 · prep</span>
+          </div>
+          <div class="body" style="gap:.5rem">
+            <div class="cue" style="padding:.6rem .7rem">
+              <div class="row between">
+                <span class="tag solid">Preparation</span>
+                <span class="ph-fine" style="color:var(--app-dim)">1:00</span>
+              </div>
+              <h3 style="font-size:.9rem">Describe a place in your hometown you like to visit</h3>
+              <ul style="opacity:.55">
+                <li>where it is</li>
+                <li>how often you go there</li>
+              </ul>
+            </div>
+            <div class="box flat" style="gap:.4rem; flex:1; min-height:0">
+              <span class="ph-fine" style="letter-spacing:.1em; text-transform:uppercase; font-weight:600">Your notes</span>
+              <div class="pad" style="flex:1"><b>park by the river</b>
+walk there — 15 min, most weekends
+with my brother
+quiet in the morning, boats
+<span style="opacity:.6">|</span></div>
+            </div>
+            <div class="box flat" style="gap:0; padding:.5rem">
+              <div class="row" style="gap:.28rem; flex-wrap:wrap; opacity:.45; font-size:.8rem">
+                <span>q</span><span>w</span><span>e</span><span>r</span><span>t</span><span>y</span><span>u</span><span>i</span><span>o</span><span>p</span>
+              </div>
+              <div class="row" style="gap:.28rem; flex-wrap:wrap; opacity:.45; font-size:.8rem; justify-content:center; padding-top:.3rem">
+                <span>a</span><span>s</span><span>d</span><span>f</span><span>g</span><span>h</span><span>j</span><span>k</span><span>l</span>
+              </div>
+            </div>
+            <div class="strip" style="background:rgba(251,191,36,.12); border-color:rgba(251,191,36,.4); color:var(--app-warn)">
+              <span>⏱</span><span>Card disappears in</span><span class="t">0:24</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <div class="note">
+      <h4><span class="dot live"></span>Keep</h4>
+      <p>Hiding the card the moment prep ends is exactly what the real test does, and the
+      server-timed countdown means it can't drift. The scratchpad's "stays on this device"
+      line is honest and builds trust at the moment it matters.</p>
+      <div class="src">ExamineePanel.tsx:46–53 · Scratchpad.tsx:30</div>
+    </div>
+    <div class="note">
+      <h4><span class="dot change"></span>Change</h4>
+      <p>When the keyboard opens, the cue card scrolls away — and the cue card is the whole
+      point of this minute. On phones the card has to be the sticky element here, with the
+      notes area taking whatever height is left. This is the one screen where the video is
+      the thing that should shrink.</p>
+      <div class="src">ExamineePanel.tsx:51–52 · .scratchpad textarea{min-height:110px}</div>
+    </div>
+    <div class="note">
+      <h4><span class="dot new"></span>New</h4>
+      <p>A countdown strip that stays visible in both states above. The copy already promises
+      "the card disappears when preparation time ends", but a bare <code>0:38</code> in the
+      card's corner is easy to miss mid-thought.</p>
+    </div>
+    <div class="note">
+      <h4><span class="dot tension"></span>Tension</h4>
+      <p>A 44px field on a soft keyboard, on a screen with a running clock, is a genuinely bad
+      writing surface. Pen and paper — which the placeholder already suggests — may honestly
+      be the better mobile answer; the on-screen pad earns its place only for people
+      practising on a train.</p>
+      <div class="src">Scratchpad.tsx:36 — “or use pen &amp; paper”</div>
+    </div>
+    <ul class="specs">
+      <li><b>Notes</b><span>keep in <code>sessionStorage</code> keyed by matchId; never emit over the socket</span></li>
+      <li><b>Keyboard</b><span><code>enterkeyhint="enter"</code>, autocapitalize sentences, autocorrect off</span></li>
+      <li><b>Warning</b><span>strip turns amber at 15s, red at 5s — and says so in words, not colour alone</span></li>
+    </ul>
+  </div>
+</section>
+
+<!-- ═══════════════ 07 ═══════════════ -->
+<section class="stop">
+  <div class="rail">
+    <div class="rail-no">07<span> /10</span></div>
+    <h3>Part 2, speaking</h3>
+    <span class="route">/room/:matchId</span>
+    <p class="when">ExamineePanel, stage <code>talk</code> — the card is gone, the clock is not.</p>
+  </div>
+
+  <div class="device" data-device>
+    <div class="picker" role="group" aria-label="Talk states">
+      <button type="button" aria-pressed="true" data-screen="talk">Speaking</button>
+      <button type="button" data-screen="urgent">Last ten seconds</button>
+    </div>
+    <div class="phone">
+      <div class="ph">
+        <div class="screen on" data-scr="talk">
+          <div class="statusbar"><span>9:41</span><span>▮▮▮ ⌁</span></div>
+          <div class="appbar">
+            <span class="tag ee">Examinee</span>
+            <span class="grow"></span>
+            <span class="ph-fine">Speaking</span>
+            <span class="pulse" style="background:var(--app-bad)"></span>
+          </div>
+          <div class="body" style="gap:.6rem">
+            <div class="stage" style="aspect-ratio:16/10">
+              <div class="faces"><b>R</b><span>Rafi is listening</span></div>
+              <div class="pip">you (live)</div>
+              <span class="vlabel">Rafi · examiner</span>
+            </div>
+            <div class="parts"><span class="done">1 ✓</span><span class="now">2 · speaking</span><span>3</span><span>Score</span></div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:.3rem">
+              <div class="ring">
+                <svg viewBox="0 0 100 100" width="102" height="102" aria-hidden="true">
+                  <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(148,163,184,.22)" stroke-width="7"></circle>
+                  <circle cx="50" cy="50" r="44" fill="none" stroke="#38bdf8" stroke-width="7"
+                          stroke-linecap="round" stroke-dasharray="276" stroke-dashoffset="150"></circle>
+                </svg>
+                <div class="t">1:22</div>
+                <div class="l">talk</div>
+              </div>
+              <p class="ph-fine">Keep going until the ring empties</p>
+            </div>
+            <div class="notif warn">
+              <span>📵</span>
+              <span>The cue card is hidden now. Work from your notes, or from memory — which is what the real test asks for.</span>
+            </div>
+            <div class="box flat" style="gap:.4rem; flex:1; min-height:0">
+              <span class="ph-fine" style="letter-spacing:.1em; text-transform:uppercase; font-weight:600">Your notes</span>
+              <div class="pad" style="flex:1"><b>park by the river</b>
+walk there — 15 min, most weekends
+with my brother
+quiet in the morning, boats</div>
+            </div>
+          </div>
+        </div>
+        <div class="screen" data-scr="urgent">
+          <div class="statusbar"><span>9:41</span><span>▮▮▮ ⌁</span></div>
+          <div class="appbar">
+            <span class="tag ee">Examinee</span>
+            <span class="grow"></span>
+            <span class="ph-fine">Speaking</span>
+            <span class="pulse" style="background:var(--app-bad)"></span>
+          </div>
+          <div class="body" style="gap:.6rem">
+            <div class="stage" style="aspect-ratio:16/10; border-color:rgba(248,113,113,.5)">
+              <div class="faces"><b>R</b><span>Rafi is listening</span></div>
+              <div class="pip">you (live)</div>
+              <span class="vlabel">Rafi · examiner</span>
+            </div>
+            <div class="parts"><span class="done">1 ✓</span><span class="now">2 · speaking</span><span>3</span><span>Score</span></div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:.3rem">
+              <div class="ring urgent">
+                <svg viewBox="0 0 100 100" width="102" height="102" aria-hidden="true">
+                  <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(248,113,113,.25)" stroke-width="7"></circle>
+                  <circle cx="50" cy="50" r="44" fill="none" stroke="#f87171" stroke-width="7"
+                          stroke-linecap="round" stroke-dasharray="276" stroke-dashoffset="255"></circle>
+                </svg>
+                <div class="t">0:09</div>
+                <div class="l">talk</div>
+              </div>
+              <p class="ph-fine" style="color:var(--app-bad); font-weight:600">Rounding off in 9 seconds</p>
+            </div>
+            <div class="notif bad"><span>⏱</span><span>Start closing your answer — the timer ends the turn, not the examiner.</span></div>
+            <div class="box flat" style="gap:.4rem; flex:1; min-height:0">
+              <span class="ph-fine" style="letter-spacing:.1em; text-transform:uppercase; font-weight:600">Your notes</span>
+              <div class="pad" style="flex:1"><b>park by the river</b>
+walk there — 15 min, most weekends
+with my brother
+quiet in the morning, boats</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <div class="note">
+      <h4><span class="dot live"></span>Keep</h4>
+      <p>The ring is the right instrument — it reads at a glance without parsing digits, and it
+      is driven by server time so both players see the same second. Keep the countdown
+      arithmetic exactly as it is.</p>
+      <div class="src">CountdownRing.tsx · useServerTimer</div>
+    </div>
+    <div class="note">
+      <h4><span class="dot change"></span>Change</h4>
+      <p>While the examinee is speaking, the video flips back to full height and pushes the
+      ring down the screen. Invert the priority for this stage: the timer belongs directly under
+      the face, and the notes go below the fold. The speaking examinee is not reading anything.</p>
+    </div>
+    <div class="note">
+      <h4><span class="dot new"></span>New</h4>
+      <p>Give the last ten seconds a second channel. The ring's fill already flips to red, but
+      colour alone fails anyone who can't distinguish it, and fails everyone whose eyes are on
+      the examiner's face. The line under the ring adds words.</p>
+    </div>
+    <div class="note">
+      <h4><span class="dot tension"></span>Tension</h4>
+      <p>Should the examinee see the examiner's face during a long turn? In the real test they
+      can, and reading a listener's expression while you speak is a skill worth practising —
+      but the ring and the face compete for the same attention. The layout above favours the
+      face. Argue it either way, then decide it once.</p>
+    </div>
+    <ul class="specs">
+      <li><b>Audio</b><span>the wake lock stays on for the whole live match — never let the phone sleep mid-answer</span></li>
+      <li><b>End</b><span>the <code>ended</code> stage keeps the notes and drops the ring, so the screen doesn't blank out</span></li>
+      <li><b>Safe area</b><span>bottom padding has to clear the home indicator under the dock and timer</span></li>
+    </ul>
+  </div>
+</section>
+
+<!-- ═══════════════ 08 ═══════════════ -->
+<section class="stop">
+  <div class="rail">
+    <div class="rail-no">08<span> /10</span></div>
+    <h3>Part 3 and the band</h3>
+    <span class="route">/room/:matchId</span>
+    <p class="when">ExaminerPanel, part 3 + ScoreDialog. The judgement call.</p>
+  </div>
+
+  <div class="device" data-device>
+    <div class="picker" role="group" aria-label="Scoring states">
+      <button type="button" aria-pressed="true" data-screen="part3">Part 3</button>
+      <button type="button" data-screen="scoring">Picking a band</button>
+      <button type="button" data-screen="done">Submitted</button>
+    </div>
+    <div class="phone">
+      <div class="ph">
+        <div class="screen on" data-scr="part3">
+          <div class="statusbar"><span>9:41</span><span>▮▮▮ ⌁</span></div>
+          <div class="appbar">
+            <span class="tag ex">Examiner</span>
+            <span class="grow"></span>
+            <span class="ph-fine">Part 3 · discussion</span>
+          </div>
+          <div class="body" style="gap:.6rem">
+            <div class="stage thin"><span class="vlabel" style="bottom:.5rem">Rafi</span></div>
+            <div class="parts"><span class="done">1 ✓</span><span class="done">2 ✓</span><span class="now">Part 3</span><span>Score</span></div>
+            <div class="deck">
+              <div class="row between" style="padding:0 .15rem">
+                <span class="ph-fine" style="letter-spacing:.1em; text-transform:uppercase; font-weight:600">Hometown · discuss</span>
+                <span class="ph-fine">2 of 4</span>
+              </div>
+              <div class="q asked"><b>✓</b><p>Why do some people prefer to live in big cities?</p></div>
+              <div class="q"><b>2</b><p>What makes a hometown attractive to visitors?</p></div>
+              <div class="q"><b>3</b><p>How can small towns keep young people from moving away?</p></div>
+              <div class="q"><b>4</b><p>Do you think cities will change a lot in the next fifty years?</p></div>
+            </div>
+            <div class="box flat" style="gap:.35rem">
+              <span class="ph-fine">These want longer answers with reasons and examples. Give Rafi time to develop each one.</span>
+            </div>
+            <button type="button" class="cta" style="flex:none">Score this test →</button>
+          </div>
+        </div>
+        <div class="screen" data-scr="scoring">
+          <div class="statusbar"><span>9:41</span><span>▮▮▮ ⌁</span></div>
+          <div class="appbar">
+            <span class="tag ex">Examiner</span>
+            <span class="grow"></span>
+            <span class="ph-fine">Round 1 · scoring Rafi</span>
+          </div>
+          <div class="body scroll" style="gap:.7rem">
+            <div class="parts"><span class="done">1 ✓</span><span class="done">2 ✓</span><span class="done">3 ✓</span><span class="now">Score</span></div>
+            <div class="box" style="gap:.55rem; text-align:center">
+              <span class="ph-fine" style="letter-spacing:.1em; text-transform:uppercase; font-weight:600">Overall band for Rafi</span>
+              <div class="bandhero"><b>6.5</b><span>/ 9</span></div>
+              <div class="bands">
+                <span>4.0</span><span>4.5</span><span>5.0</span><span>5.5</span>
+                <span>6.0</span><span class="on">6.5</span><span>7.0</span><span>7.5</span>
+                <span>8.0</span><span>8.5</span><span>9.0</span><span>↔</span>
+              </div>
+              <p class="ph-fine">Half bands. Scroll for the full 0–9 range.</p>
+            </div>
+            <div class="box flat" style="gap:.45rem">
+              <span class="ph-fine" style="letter-spacing:.1em; text-transform:uppercase; font-weight:600">The four criteria</span>
+              <div class="kv"><span>Fluency &amp; coherence</span><b>—</b></div>
+              <div class="kv"><span>Lexical resource</span><b>—</b></div>
+              <div class="kv"><span>Grammatical range</span><b>—</b></div>
+              <div class="kv"><span>Pronunciation</span><b>—</b></div>
+            </div>
+            <div class="notif info">
+              <span>💡</span>
+              <span>No notes? Say what you remember out loud — you can still leave a note for Rafi after submitting.</span>
+            </div>
+            <button type="button" class="cta" style="min-height:3.4rem">Submit 6.5 for Rafi</button>
+          </div>
+        </div>
+        <div class="screen" data-scr="done">
+          <div class="statusbar"><span>9:41</span><span>▮▮▮ ⌁</span></div>
+          <div class="appbar">
+            <span class="tag ex">Examiner</span>
+            <span class="grow"></span>
+            <span class="ph-fine">Round 1 · scored</span>
+          </div>
+          <div class="body" style="gap:.8rem; justify-content:center; text-align:center">
+            <div style="display:flex; flex-direction:column; align-items:center; gap:.55rem">
+              <div class="bandhero"><b>6.5</b><span>given to Rafi</span></div>
+              <p class="ph-sub" style="max-width:26ch">
+                That's round 1 done. You and Rafi swap roles — this time Rafi asks the questions and you answer them.
+              </p>
+            </div>
+            <div class="box flat" style="gap:.5rem; text-align:left">
+              <div class="row between"><span class="ph-fine">Round 1 · you examined</span><span class="score">6.5</span></div>
+              <div class="row between"><span class="ph-fine">Round 2 · you answer</span><span class="ph-fine">next</span></div>
+            </div>
+            <div class="row" style="gap:.5rem; justify-content:center">
+              <span class="spin"></span>
+              <span class="ph-sub">Waiting for Rafi…</span>
+            </div>
+            <div class="box flat" style="gap:.4rem; text-align:left">
+              <span class="ph-fine">Keep this tab open. Round 2 starts on its own with a different topic set.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <div class="note">
+      <h4><span class="dot live"></span>Keep</h4>
+      <p>One band out of 9 for the whole test is the honest model — it matches what an examiner
+      actually hands over, and it keeps the scoring screen to a single decision. Don't turn it
+      into four sub-scores unless you're ready to store and average them.</p>
+      <div class="src">ScoreDialog.tsx:5 · 0–9 in half bands</div>
+    </div>
+    <div class="note">
+      <h4><span class="dot change"></span>Change</h4>
+      <p>A native <code>&lt;select&gt;</code> for the band is a scroll wheel of nineteen near-identical
+      numbers. On a phone, a grid of half-band chips puts the whole decision in one glance and
+      one tap, and the big numeral above it confirms the choice before commit.</p>
+      <div class="src">ScoreDialog.tsx:36–43</div>
+    </div>
+    <div class="note">
+      <h4><span class="dot new"></span>New</h4>
+      <p>Show the four IELTS criteria as labels — fluency, vocabulary, grammar, pronunciation —
+      without asking for four numbers. They cost nothing and they turn "give a mark" into
+      "recall the test", which is what makes scores consistent between two strangers.</p>
+    </div>
+    <div class="note">
+      <h4><span class="dot tension"></span>Tension</h4>
+      <p>The auto-swap is the best thing about this app and the most brutal. Someone who just
+      scored their partner 5.5 has to be examined by them seconds later. The round-2 handover
+      screen is the place to defuse that, and it deserves better than a spinner.</p>
+      <div class="src">MatchPage.tsx:61–73 · round swap</div>
+    </div>
+    <ul class="specs">
+      <li><b>Default</b><span>preselect 7.0, as now — a neutral band someone can move from quickly</span></li>
+      <li><b>Confirm</b><span>the button names the number: "Submit 6.5 for Rafi", never a bare "Submit"</span></li>
+      <li><b>Both rounds</b><span>the same panel serves round 2; only the role tag and peer name change</span></li>
+    </ul>
+  </div>
+</section>
+
+<!-- ═══════════════ 09 ═══════════════ -->
+<section class="stop">
+  <div class="rail">
+    <div class="rail-no">09<span> /10</span></div>
+    <h3>Score summary, and the other ending</h3>
+    <span class="route">/room/:matchId</span>
+    <p class="when">ResultsView, and DisconnectedBanner beside it — the two ways a match ends.</p>
+  </div>
+
+  <div class="device" data-device>
+    <div class="picker" role="group" aria-label="Ending states">
+      <button type="button" aria-pressed="true" data-screen="results">Both rounds done</button>
+      <button type="button" data-screen="lost">Partner dropped</button>
+    </div>
+    <div class="phone">
+      <div class="ph">
+        <div class="screen on" data-scr="results">
+          <div class="statusbar"><span>9:41</span><span>▮▮▮ ⌁</span></div>
+          <div class="appbar">
+            <span class="tag p">Match complete</span>
+            <span class="grow"></span>
+            <span class="ph-fine">with Rafi</span>
+          </div>
+          <div class="body scroll" style="gap:.9rem; text-align:center">
+            <div style="display:flex; flex-direction:column; align-items:center; gap:.3rem; padding-top:.5rem">
+              <div class="bandhero" style="padding:0">
+                <b>6.8</b><span>your band this match</span>
+              </div>
+              <p class="ph-fine">Both of you examined and were examined. That's one full test each.</p>
+            </div>
+            <div class="box" style="gap:.6rem; text-align:left">
+              <div class="row between">
+                <span class="ph-fine" style="letter-spacing:.1em; text-transform:uppercase; font-weight:600">Round 1 · you examined</span>
+                <span class="score">6.5</span>
+              </div>
+              <span class="ph-fine">You scored Rafi's long turn and discussion.</span>
+              <hr style="border:none; border-top:1px solid var(--app-line); margin:.1rem 0">
+              <div class="row between">
+                <span class="ph-fine" style="letter-spacing:.1em; text-transform:uppercase; font-weight:600">Round 2 · you answered</span>
+                <span class="score">7.0</span>
+              </div>
+              <span class="ph-fine">Rafi scored your interview on a different topic set.</span>
+            </div>
+            <div class="box flat" style="gap:.5rem; text-align:left">
+              <div class="row between">
+                <span class="ph-fine">Your average is now</span>
+                <b style="color:var(--app-acc); font-size:1rem">6.8 · 7 tests</b>
+              </div>
+              <div class="bar"><i style="width:75%"></i></div>
+              <span class="ph-fine">6.8 of 9 across everything you've practised.</span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:.5rem">
+              <button type="button" class="cta">Find another partner</button>
+              <button type="button" class="cta ghost">Back to lobby</button>
+            </div>
+          </div>
+        </div>
+        <div class="screen" data-scr="lost">
+          <div class="statusbar"><span>9:41</span><span>▮▮▮ ⌁</span></div>
+          <div class="appbar">
+            <span class="tag warn">Match ended</span>
+            <span class="grow"></span>
+            <span class="ph-fine">with Rafi</span>
+          </div>
+          <div class="body" style="justify-content:center; gap:.9rem; text-align:center">
+            <div style="display:flex; flex-direction:column; align-items:center; gap:.55rem">
+              <div class="faces" style="gap:.6rem">
+                <b style="width:3.6rem; height:3.6rem; font-size:1.3rem; background:rgba(248,113,113,.12); border-color:rgba(248,113,113,.4); color:var(--app-bad)">✕</b>
+              </div>
+              <h4 class="ph-h" style="font-size:1.15rem">Rafi disconnected</h4>
+              <p class="ph-sub" style="max-width:28ch">
+                The match closed before both rounds finished. Nothing from the unfinished round was saved.
+              </p>
+            </div>
+            <div class="box flat" style="gap:.45rem; text-align:left">
+              <span class="ph-fine" style="letter-spacing:.1em; text-transform:uppercase; font-weight:600">What survived</span>
+              <div class="row between"><span class="ph-fine">Round 1 · completed</span><span class="score">6.5</span></div>
+              <div class="row between"><span class="ph-fine">Round 2 · cut short</span><span class="ph-fine">discarded</span></div>
+            </div>
+            <div class="box flat" style="gap:.4rem; text-align:left">
+              <span class="ph-fine">Rafi may have lost signal rather than left. Queuing again takes about a minute.</span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:.5rem">
+              <button type="button" class="cta">Find another partner</button>
+              <button type="button" class="cta ghost">Back to lobby</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <div class="note">
+      <h4><span class="dot live"></span>Keep</h4>
+      <p>Explaining <em>why</em> a round was discarded — "no scores recorded, no resume in the
+      MVP" — is unusually straight with the user and should stay. Losing twenty minutes to
+      someone else's bad signal already feels unfair; not knowing why is worse.</p>
+      <div class="src">DisconnectedBanner.tsx:17–20 · README</div>
+    </div>
+    <div class="note">
+      <h4><span class="dot change"></span>Change</h4>
+      <p>ResultsView shows the round table and a "Back to lobby" button. It doesn't say what the
+      match did to the average, which is the only number the user is tracking over time. Lead
+      with the match band, but show the moving average and the test count beside it.</p>
+      <div class="src">ResultsView.tsx:16–52</div>
+    </div>
+    <div class="note">
+      <h4><span class="dot new"></span>New</h4>
+      <p>"Find another partner" from the results screen. After a good test the momentum is at its
+      highest, and the current flow sends everyone back through the lobby before they can act
+      on it.</p>
+    </div>
+    <div class="note">
+      <h4><span class="dot tension"></span>Tension</h4>
+      <p>An abandoned round is thrown away. From the person still connected, that reads as a bug
+      until it's explained — the frame on the right does the explaining, but the underlying
+      question is whether a completed round-1 score should survive a mid-round-2 dropout. Worth
+      a product decision rather than inheriting the current one.</p>
+    </div>
+    <ul class="specs">
+      <li><b>Save</b><span>a disconnect marks the match <code>abandoned</code>; no scores recorded from it</span></li>
+      <li><b>Copy</b><span>never say "error" — say what happened and what it cost</span></li>
+      <li><b>Exit</b><span>both endings offer the same two doors in the same place, so the layout doesn't move</span></li>
+    </ul>
+  </div>
+</section>
+
+<!-- ═══════════════ 10 ═══════════════ -->
+<section class="stop">
+  <div class="rail">
+    <div class="rail-no">10<span> /10</span></div>
+    <h3>Profile</h3>
+    <span class="route">/profile</span>
+    <p class="when">ProfilePage. The only screen you visit when you're not in a hurry.</p>
+  </div>
+
+  <div class="device" data-device>
+    <div class="phone">
+      <div class="ph">
+        <div class="screen on">
+          <div class="statusbar"><span>9:41</span><span>▮▮▮ ⌁</span></div>
+          <div class="appbar">
+            <span class="iconbtn">←</span>
+            <span class="avatar">S</span>
+            <span class="brand">Sohag</span>
+            <span class="grow"></span>
+            <span class="ph-fine">7 tests</span>
+          </div>
+          <div class="body scroll" style="gap:.75rem">
+            <div class="box" style="gap:.7rem">
+              <div style="display:flex; align-items:baseline; gap:.45rem">
+                <b style="font-size:2.4rem; font-weight:800; letter-spacing:-.04em; color:var(--app-acc); line-height:1">6.8</b>
+                <span class="ph-fine">average band · best 7.5</span>
+              </div>
+              <div class="bar" style="height:.34rem"><i style="width:75%"></i></div>
+              <div class="row" style="gap:1.6rem">
+                <span><b style="font-size:1.15rem">4</b> <span class="ph-fine">as examinee</span></span>
+                <span><b style="font-size:1.15rem">3</b> <span class="ph-fine">as examiner</span></span>
+              </div>
+            </div>
+
+            <div class="seg">
+              <span class="on">Received</span><span>Given</span>
+            </div>
+
+            <div class="deck" style="gap:.4rem">
+              <div class="box flat" style="gap:.25rem; padding:.6rem .7rem">
+                <div class="row between">
+                  <span class="ph-fine" style="font-weight:600; color:var(--app-text)">Rafi examined you</span>
+                  <span class="score">7.0</span>
+                </div>
+                <span class="ph-fine">Today · Round 2 · Hometown</span>
+              </div>
+              <div class="box flat" style="gap:.25rem; padding:.6rem .7rem">
+                <div class="row between">
+                  <span class="ph-fine" style="font-weight:600; color:var(--app-text)">Mei examined you</span>
+                  <span class="score">6.5</span>
+                </div>
+                <span class="ph-fine">3 October · Round 2 · Work &amp; Study</span>
+              </div>
+              <div class="box flat" style="gap:.25rem; padding:.6rem .7rem">
+                <div class="row between">
+                  <span class="ph-fine" style="font-weight:600; color:var(--app-text)">Tom examined you</span>
+                  <span class="score">7.5</span>
+                </div>
+                <span class="ph-fine">1 October · Round 2 · Travel</span>
+              </div>
+              <div class="box flat" style="gap:.25rem; padding:.6rem .7rem">
+                <div class="row between">
+                  <span class="ph-fine" style="font-weight:600; color:var(--app-text)">Aisha examined you</span>
+                  <span class="score">6.0</span>
+                </div>
+                <span class="ph-fine">28 September · Round 2 · Food</span>
+              </div>
+            </div>
+
+            <div class="box flat" style="gap:.4rem">
+              <span class="ph-fine" style="letter-spacing:.1em; text-transform:uppercase; font-weight:600">A word on these numbers</span>
+              <span class="ph-fine">Every band here was given by another learner, not a certified examiner. The average moves slowly — one 5.5 won't sink it.</span>
+            </div>
+
+            <button type="button" class="cta ghost">Switch nickname</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <div class="note">
+      <h4><span class="dot live"></span>Keep</h4>
+      <p>Two headline numbers — tests taken and average band — is the right amount of summary,
+      and <code>ROUND(AVG(band),1)</code> to one decimal is the convention IELTS itself uses.
+      Splitting received from given is honest about where the numbers come from.</p>
+      <div class="src">ProfileStats.tsx · server/src/db/repos</div>
+    </div>
+    <div class="note">
+      <h4><span class="dot change"></span>Change</h4>
+      <p>Two stacked full-length lists, each with its own card and heading, means four screens
+      of scroll on a phone. A Received / Given segmented control halves the length and puts
+      the two views on the same axis so they're actually comparable.</p>
+      <div class="src">ProfilePage.tsx:60–95</div>
+    </div>
+    <div class="note">
+      <h4><span class="dot new"></span>New</h4>
+      <p>Say out loud that the bands come from other learners. The current copy says "guest
+      practice account"; it never says the score you're staring at was given by a stranger who
+      took the same test twenty minutes ago. That changes how much weight it deserves.</p>
+      <div class="src">ProfilePage.tsx:52 — “Guest practice account”</div>
+    </div>
+    <div class="note">
+      <h4><span class="dot tension"></span>Tension</h4>
+      <p>There's no way back into a finished match. A "practice this topic again" button would
+      be genuinely useful and would also be the first thing here that isn't just reading your
+      own history. It's the obvious next feature after this redesign; it isn't this redesign.</p>
+    </div>
+    <ul class="specs">
+      <li><b>Avatar</b><span>initial in a gradient disc — no image upload, no storage, no moderation</span></li>
+      <li><b>Numbers</b><span><code>font-variant-numeric: tabular-nums</code> so bands line up down the column</span></li>
+      <li><b>Average</b><span>keep exactly as the server computes it; don't average the displayed rounds on the client</span></li>
+    </ul>
+  </div>
+</section>
+
+<footer class="masthead" style="border-bottom:none; border-top:1px solid var(--line); margin-top:3rem">
+  <div class="eyebrow">Summary</div>
+  <h1 style="font-size:clamp(1.5rem,3.4vw,2.1rem); max-width:34ch">
+    Six changes carry most of the mobile gain
+  </h1>
+  <p class="deck" style="max-width:70ch">
+    Everything above reduces to a short list. Two of these are layout, two are new controls,
+    two are copy — and none of them touch the exam protocol, the server timer, or the
+    auto-ready flow that already works.
+  </p>
+  <div class="meta" style="display:grid; gap:1.1rem 3rem; grid-template-columns:repeat(auto-fit,minmax(19rem,1fr)); font-family:var(--body); font-size:.92rem; color:var(--ink-2); line-height:1.55">
+    <div><b style="font-family:var(--mono); font-size:.7rem; letter-spacing:.1em; text-transform:uppercase; color:var(--acc); display:block; margin-bottom:.2rem">Layout</b>
+      Give the examiner's video a fixed short strip on phones, and give the examinee's cue card
+      the sticky slot during prep. The pinned video column stops being one rule for both roles.</div>
+    <div><b style="font-family:var(--mono); font-size:.7rem; letter-spacing:.1em; text-transform:uppercase; color:var(--acc); display:block; margin-bottom:.2rem">Navigation</b>
+      One full-width primary in the lobby, everything else demoted. Three equal buttons is not
+      a choice, it's a menu.</div>
+    <div><b style="font-family:var(--mono); font-size:.7rem; letter-spacing:.1em; text-transform:uppercase; color:var(--acc); display:block; margin-bottom:.2rem">Timers</b>
+      One countdown strip, visible on every timed screen, in words as well as colour. The ring
+      stays; it just stops being the only place the clock lives.</div>
+    <div><b style="font-family:var(--mono); font-size:.7rem; letter-spacing:.1em; text-transform:uppercase; color:var(--acc); display:block; margin-bottom:.2rem">Controls</b>
+      A persistent dock for mic, camera, notes and leave. Round targets where the thumb already
+      rests, instead of chips under the video.</div>
+    <div><b style="font-family:var(--mono); font-size:.7rem; letter-spacing:.1em; text-transform:uppercase; color:var(--acc); display:block; margin-bottom:.2rem">Scoring</b>
+      Half-band chips instead of a select, the number named on the submit button, and the four
+      criteria shown as prompts for recall.</div>
+    <div><b style="font-family:var(--mono); font-size:.7rem; letter-spacing:.1em; text-transform:uppercase; color:var(--acc); display:block; margin-bottom:.2rem">Honesty</b>
+      Say who gave the score on the profile, say what a disconnect costs on the banner, say the
+      camera prompt is coming before it arrives.</div>
+  </div>
+  <div class="meta" style="margin-top:2.4rem">
+    <span><b>Measured against</b> client/src @ 43e92dd</span>
+    <span><b>Drawn at</b> 390 × 844</span>
+    <span><b>Not covered</b> tablet, landscape, desktop</span>
+  </div>
+</footer>
+
+</div>
+
+<script>
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('.picker button');
+  if (!btn) return;
+  const picker = btn.closest('.picker');
+  const phone = picker.parentElement.querySelector('.phone');
+  if (!phone) return;
+  picker.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
+  phone.querySelectorAll('.screen').forEach((s) => {
+    s.classList.toggle('on', s.dataset.scr === btn.dataset.screen);
+  });
+});
+</script>

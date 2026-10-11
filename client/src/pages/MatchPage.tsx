@@ -1,11 +1,14 @@
 import { useEffect } from 'react';
 import { DisconnectedBanner } from '../components/DisconnectedBanner';
+import { CueCardView } from '../components/CueCardView';
 import { ExaminerPanel } from '../components/ExaminerPanel';
 import { ExamineePanel } from '../components/ExamineePanel';
 import { ReadyGate } from '../components/ReadyGate';
 import { ResultsView } from '../components/ResultsView';
 import { VideoStage } from '../components/VideoStage';
+import { useKeyboardOpen } from '../hooks/useKeyboardOpen';
 import { useMedia } from '../hooks/useMedia';
+import { usePhoneLayout } from '../hooks/usePhoneLayout';
 import { useWakeLock } from '../hooks/useWakeLock';
 import { useWebRTC } from '../hooks/useWebRTC';
 import { C2S } from '../lib/events';
@@ -14,6 +17,8 @@ import { useMatch } from '../state/MatchContext';
 export function MatchPage() {
   const { state, leaveMatch, socket } = useMatch();
   const session = state.session;
+  const phoneLayout = usePhoneLayout();
+  const keyboardOpen = useKeyboardOpen();
 
   const media = useMedia();
   const down = Boolean(session && (session.peerDisconnected || session.peerLeft));
@@ -57,6 +62,38 @@ export function MatchPage() {
   const bothReady = session.youReady && session.peerReady;
   const showStage = live && Boolean(socket);
 
+  // On phones the pinned video is a short face strip whenever the exam panel is
+  // the working surface rather than the thing being watched: the examiner reads
+  // the question bank throughout, and in Part 2 the examinee needs the cue card
+  // or the talk countdown in view. Outside those stages the full stage stays —
+  // watching your partner's answer is the point of Parts 1 and 3.
+  const stripVideo = session.role === 'examiner' || session.part === 2;
+
+  // During prep the cue card is what the minute is for, so on phones it moves
+  // into the pinned column and the copy in the exam panel is dropped — that
+  // keeps the card on screen while the notes are typed. Desktop is unchanged.
+  const examPrepHidden =
+    phoneLayout &&
+    session.role === 'examinee' &&
+    session.part === 2 &&
+    session.stage === 'prep' &&
+    Boolean(session.card);
+
+  // Once the keyboard is up the notes field is the working surface: the video
+  // leaves entirely (a pinned band plus a cue card plus a keyboard leaves no
+  // room to type in) and the card shrinks to a summary that scrolls inline.
+  const showCueStrip = examPrepHidden && !keyboardOpen;
+
+  const layoutClass = [
+    'match-layout',
+    showStage ? '' : 'no-video',
+    showStage && stripVideo ? 'strip-video' : '',
+    showStage && examPrepHidden ? 'sticky-cue' : '',
+    keyboardOpen && examPrepHidden ? 'keyboard-up' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   let body;
   if (session.completed) {
     body = <ResultsView />;
@@ -94,7 +131,7 @@ export function MatchPage() {
           </button>
         </div>
       </div>
-      <div className={`match-layout${showStage ? '' : ' no-video'}`}>
+      <div className={layoutClass}>
         {showStage && (
           <div className="video-col">
             <VideoStage
@@ -114,6 +151,7 @@ export function MatchPage() {
               onRetry={retry}
               mediaError={media.error}
             />
+            {showCueStrip && <CueCardView card={session.card!} timer={session.timer} stage="prep" />}
           </div>
         )}
         <div className="exam-col">{body}</div>
